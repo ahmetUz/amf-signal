@@ -1,5 +1,7 @@
 # Notes (matière du README)
 
+> Journal de travail tenu pendant l'exercice, dans l'ordre chronologique. Certains passages décrivent un état intermédiaire, daté. L'état final est décrit dans le [README](../README.md).
+
 ## Données
 
 - Source : API Opendatasoft Explore v2.1, dataset `flux-amf-new-prod`. Environ 300 publications sur 3 jours, soit 4 pages de 100.
@@ -41,7 +43,7 @@
 
 ## Prompts
 
-- Écart avec la spec initiale (30/10/2026) : la documentation à jour de l'API indique que `tool_choice` forcé renvoie une 400 sur Sonnet 5.5 et Opus 5.5, et que toute température non par défaut renvoie une 400 sur Haiku 5.5 et Sonnet 5.5. On utilise donc les structured outputs (`messages.parse`, avec un schéma Zod garanti par l'API puis revalidé). Pour la stabilité, on compte sur `effort: "low"` et sur une grille de champs fermés plutôt que sur la température.
+- Écart avec la spec initiale (30/10/2026) : la documentation à jour de l'API indique que `tool_choice` forcé renvoie une 400 sur Sonnet 5.5 et Opus 5.5, et que toute température non par défaut renvoie une 400 sur Haiku 5.5 et Sonnet 5.5. On utilise donc les structured outputs (`messages.create` avec `output_config.format`, généré depuis un schéma Zod, puis revalidé par Zod ; `stop_reason` est contrôlé avant le parsing, voir `lib/llm/structured.ts`). Pour la stabilité, on compte sur `effort: "low"` et sur une grille de champs fermés plutôt que sur la température.
 
 ### Grille de sélection (Haiku, `lib/selection/grid.ts`)
 
@@ -95,7 +97,7 @@ Le contrôle automatique a détecté des problèmes dans ta brève précédente.
 Réécris la brève complète en corrigeant ces problèmes, avec les mêmes règles.
 ```
 
-Premier essai (30/10/2026, 5 brèves) : 4 sur 5 ont eu besoin d'une relance, et les 5 ont fini avec tous leurs chiffres `verifie` (46 chiffres). Le motif des premières tentatives n'a pas été conservé (voir les améliorations).
+Premier essai (30/10/2026, 5 brèves) : 4 sur 5 ont eu besoin d'une relance, et les 5 ont fini avec tous leurs chiffres `verifie` (46 chiffres). Le motif des premières tentatives n'était pas encore conservé ; il l'est depuis (colonne `first_attempt_issues`, affichée sur `/breves`). État final après régénérations : 2 brèves relancées pour cause de longueur, Capgemini (190 mots) et Sanofi (157 mots).
 
 ### Contrôle des citations : tolérance sur la ponctuation des bords (30/10/2026)
 
@@ -120,4 +122,9 @@ Les 3 chiffres « à confirmer » de Capgemini avaient une citation identique au
 
 ## Erreurs de l'IA
 
+- **Des chiffres vrais mais hors sujet (STMicroelectronics).** Pour une annonce de nominations, Haiku a cité « 49 000 collaborateurs » et « 200 000 clients ». Les deux chiffres sont bien dans le PDF, donc la vérification les a passés au vert, mais ils viennent du paragraphe « À propos », pas de l'annonce. C'est la limite du contrôle : il prouve qu'un chiffre est dans le document, pas qu'il est pertinent. Correction : une règle dans le prompt pour ignorer la présentation de la société ; la brève régénérée ne parle plus que des nominations.
+- **Une date prise pour un chiffre.** Haiku a listé « 1er janvier 2027 » parmi les chiffres d'une brève, et le vérificateur lisait le nombre 1. Correction : le prompt exclut les dates, et le code les ignore.
+
 ## Temps
+
+Environ 3 h 30.
