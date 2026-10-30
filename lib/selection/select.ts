@@ -5,6 +5,7 @@ import { getDocument } from "@/lib/documents/store";
 import { quoteFoundIn } from "@/lib/verification/quote";
 import { computeFinalScore } from "./final-score";
 import { fillGrid } from "./grid";
+import { gridSchema, type Grid } from "./grid-schema";
 import { scoreByRules, type RuleScore } from "./rules";
 
 const CANDIDATE_COUNT = 10; // passent à la grille Haiku
@@ -51,15 +52,32 @@ async function topCandidates() {
       title: publications.title,
       subtype: publications.infoSubtype,
       documentUrl: publications.documentUrl,
+      grid: publications.grid,
       cac40: isCac40,
     })
     .from(publications)
-    .orderBy(desc(publications.score), desc(isCac40), desc(publications.publishedAt))
+    // uin en dernier : 116 publications sur 187 ont une heure arrondie à la minute. Sans ce critère,
+    // les ex aequo reviennent dans un ordre variable et la sélection n'est plus reproductible.
+    .orderBy(desc(publications.score), desc(isCac40), desc(publications.publishedAt), publications.uin)
     .limit(CANDIDATE_COUNT);
 }
 
 type Candidate = Awaited<ReturnType<typeof topCandidates>>[number];
-type Analysis = { uin: string; finalScore: number | null; finalReasons: string[] };
+type Analysis = { uin: string; finalScore: number | null; finalReasons: string[]; gridReused?: boolean };
+
+/**
+ * Réutilise la grille déjà stockée : pas de nouvel appel payant, et une sélection reproductible
+ * (un LLM ne répond pas toujours pareil). Pour refaire les grilles, après un changement de prompt
+ * par exemple, il suffit de remettre la colonne grid à null.
+ */
+async function getGrid(candidate: Candidate, text: string): Promise<{ grid: Grid; reused: boolean }> {
+  const stored = gridSchema.safeParse(candidate.grid); // JSONB non typé : on revalide avant de s'y fier
+  if (stored.success) return { grid: stored.data, reused: true };
+
+  const grid = await fillGrid({ ...candidate, text });
+  await db.update(publications).set({ grid }).where(eq(publications.uin, candidate.uin));
+  return { grid, reused: false };
+}
 
 /** Étape 3b pour une candidate : document → grille Haiku → score final calculé par le code. */
 async function analyze(candidate: Candidate): Promise<Analysis> {
@@ -69,11 +87,10 @@ async function analyze(candidate: Candidate): Promise<Analysis> {
     return { uin, finalScore: null, finalReasons: [`Document non analysable : ${document.status}`] };
   }
   try {
-    const grid = await fillGrid({ ...candidate, text: document.text });
+    const { grid, reused } = await getGrid(candidate, document.text);
     const citationVerified = quoteFoundIn(grid.citation, document.text);
     const { score, reasons } = computeFinalScore({ grid, cac40: candidate.cac40, citationVerified });
-    await db.update(publications).set({ grid }).where(eq(publications.uin, uin));
-    return { uin, finalScore: score, finalReasons: reasons };
+    return { uin, finalScore: score, finalReasons: reasons, gridReused: reused };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     return { uin, finalScore: null, finalReasons: [`Analyse impossible : ${message}`] };
