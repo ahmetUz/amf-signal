@@ -18,6 +18,11 @@
 - Paquets ESEF : certaines URL sont des `.zip` et non des PDF. Certains chemins contiennent une année `8888/01`, qui ressemble à une valeur de remplissage.
 - Le champ `filename` vaut « Nouveau » : ce n'est pas le nom du fichier.
 - Le champ `informationdeposee_inf_upg_inf_inf_upg_sts` vaut `NEW`. Il existe donc sans doute des rectificatifs (à vérifier).
+- Collecte du 30/10/2026 : 187 publications en français sur 3 jours, 0 rejet par Zod. Seuls `type_d_information` et `sous_type_d_information` sont parfois null (1 cas) : ils sont nullable dans le schéma.
+- Émetteurs étrangers : 8 publications sur 187 ne sont pas FR (NL, BE, DE, IT, GR). RE (La Réunion) est classé à part alors que c'est la France. On les garde : le pays est stocké et pourra servir de filtre.
+- Précision des dates : 116 publications sur 187 ont une heure de dépôt pile à la minute (`:00`), les autres ont des secondes. La précision dépend sans doute du diffuseur, donc on ne peut pas compter sur les secondes pour départager deux dépôts.
+- Fuseau horaire incertain : `uin_dat_amf` est en `+00:00`, mais le champ `timezone_uin_dat_amf` vaut `02:00` (heure d'été) alors que Paris est en UTC+1 depuis le 25/10. On stocke l'horodatage tel quel, en `timestamptz`.
+- Upsert sur `uin` : une seconde collecte donne toujours 187 lignes. `score` et `selected` ne sont pas écrasés par une nouvelle collecte.
 
 ## Prompts
 
