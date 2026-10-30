@@ -27,7 +27,7 @@ Ne commence pas une partie tant que la précédente ne fonctionne pas de bout en
 - **Next.js** (App Router) en TypeScript strict. Le front et le back sont dans le même projet (route handlers et server actions).
 - **UI** : Tailwind et shadcn/ui, le design system utilisé chez Finadory.
 - **Base de données** : PostgreSQL sur Supabase, via Drizzle ORM. Driver `postgres`, avec `prepare: false` derrière le pooler Supabase.
-- **LLM** : l'API Claude avec `@anthropic-ai/sdk`. Les sorties structurées passent par un tool use forcé, validé avec Zod. Modèles : `claude-haiku-5-5` pour la sélection, `claude-sonnet-5-5` pour les brèves.
+- **LLM** : l'API Claude avec `@anthropic-ai/sdk`. Les sorties structurées passent par les structured outputs (`client.messages.parse` et `output_config.format` avec un schéma Zod), revalidées par Zod. Le tool use forcé et la température renvoient une 400 sur les modèles 5.5. Modèles : `claude-haiku-5-5` pour la sélection, `claude-sonnet-5-5` pour les brèves.
 - **PDF** : `unpdf` pour extraire le texte, car il fonctionne en serverless.
 - **Tests** : Jest, comme dans la stack Finadory.
 - **Déploiement** : Vercel, avec Vercel Cron pour la collecte.
@@ -88,7 +88,7 @@ Il se fait en deux étapes. Le principe : l'IA classe, le code décide.
    - **Fort** : résultats, avertissement sur résultats, fusion ou acquisition, OPA ou OPE, augmentation de capital, changement de dirigeant.
    - **Moyen** : franchissement de seuil, rachat d'actions important.
    - **Routine, 0 point** : nombre d'actions et de droits de vote, bilan de contrat de liquidité, honoraires des commissaires aux comptes, mise à disposition de documents.
-2. **Une grille factuelle pour les 10 meilleures environ.** Claude Haiku la remplit en tool use, avec une température à 0 : type d'événement, présence d'un montant, impact sur le capital, impact sur la direction, etc. Le code calcule ensuite le score final. On ne demande jamais au LLM si une publication est « intéressante ».
+2. **Une grille factuelle pour les 10 meilleures environ.** Claude Haiku la remplit en structured output, avec `effort: "low"` et uniquement des champs fermés : type d'événement, présence d'un montant, impact sur le capital, impact sur la direction, etc. Le code calcule ensuite le score final. On ne demande jamais au LLM si une publication est « intéressante ».
 
 Les raisons du score sont stockées et affichées dans l'interface.
 

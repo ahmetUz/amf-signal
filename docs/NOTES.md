@@ -32,6 +32,8 @@
 
 ## Prompts
 
+- Écart avec la spec initiale (30/10/2026) : la documentation à jour de l'API indique que `tool_choice` forcé renvoie une 400 sur Sonnet 5.5 et Opus 5.5, et que toute température non par défaut renvoie une 400 sur Haiku 5.5 et Sonnet 5.5. On utilise donc les structured outputs (`messages.parse`, avec un schéma Zod garanti par l'API puis revalidé). Pour la stabilité, on compte sur `effort: "low"` et sur une grille de champs fermés plutôt que sur la température.
+
 ## Erreurs de l'IA
 
 ## Temps
