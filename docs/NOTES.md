@@ -34,6 +34,26 @@
 
 - Écart avec la spec initiale (30/10/2026) : la documentation à jour de l'API indique que `tool_choice` forcé renvoie une 400 sur Sonnet 5.5 et Opus 5.5, et que toute température non par défaut renvoie une 400 sur Haiku 5.5 et Sonnet 5.5. On utilise donc les structured outputs (`messages.parse`, avec un schéma Zod garanti par l'API puis revalidé). Pour la stabilité, on compte sur `effort: "low"` et sur une grille de champs fermés plutôt que sur la température.
 
+### Grille de sélection (Haiku, `lib/selection/grid.ts`)
+
+Modèle `claude-haiku-5-5`, `effort: "low"`, structured output avec `gridSchema` (Zod). Entrée : société, type AMF, titre, puis le texte des 3 premières pages entre balises `<document>`.
+
+```
+Tu analyses une publication réglementée déposée auprès de l'AMF.
+Remplis la grille UNIQUEMENT à partir du texte fourni entre les balises <document>. N'utilise aucune connaissance extérieure.
+
+- type_evenement : l'événement principal annoncé par la publication.
+- revision_objectifs : "hausse" ou "baisse" seulement si le texte dit explicitement que les objectifs ou perspectives sont relevés ou abaissés, sinon "aucune".
+- montant_annonce : true si le texte mentionne un montant en euros (ou autre devise) lié à l'événement.
+- impact_capital : true si le nombre d'actions ou la répartition du capital change (émission, augmentation de capital, offre, fusion).
+- impact_direction : true si un dirigeant ou mandataire social arrive, part ou change de fonction.
+- citation : recopie MOT POUR MOT une phrase du document qui justifie type_evenement. Ne la reformule pas, ne la résume pas.
+
+Si une information est absente du texte, réponds false ou "aucune". Ne devine jamais.
+```
+
+Premier essai (30/10/2026, 10 candidates, 25 s) : les 10 citations ont été retrouvées mot pour mot. Vérification manuelle d'un cas douteux : TotalEnergies avait `impact_capital = true`, ce que confirme le document (augmentation de capital réservée aux salariés et rachat d'actions de 2,5 G$).
+
 ## Erreurs de l'IA
 
 ## Temps
