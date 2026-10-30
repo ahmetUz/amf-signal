@@ -54,7 +54,9 @@ export async function generateBrief(uin: string, { force = false } = {}) {
   let output = await writeBrief(input);
   let evaluation = evaluate(output, document.text);
   let attempts = 1;
-  if (evaluation.issues.length > 0) {
+  // On garde les problèmes de la 1re tentative : ce sont les erreurs de l'IA détectées par le code.
+  const firstAttemptIssues = evaluation.issues.length > 0 ? evaluation.issues : null;
+  if (firstAttemptIssues) {
     output = await writeBrief(input, { previous: output, issues: evaluation.issues });
     evaluation = evaluate(output, document.text);
     attempts = 2;
@@ -68,6 +70,7 @@ export async function generateBrief(uin: string, { force = false } = {}) {
     status: overallStatus(evaluation.figures.map((f) => f.status)),
     wordCount: evaluation.wordCount,
     attempts,
+    firstAttemptIssues,
     model: BRIEF_MODEL,
     sourceUrl: publication.documentUrl,
   };

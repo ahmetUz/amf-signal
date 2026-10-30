@@ -62,6 +62,7 @@ export const briefs = pgTable("briefs", {
   status: text("status", { enum: figureStatuses }).notNull(), // statut du chiffre le moins sûr
   wordCount: integer("word_count").notNull(), // compté par le code
   attempts: integer("attempts").notNull(), // 1, ou 2 s'il y a eu une relance
+  firstAttemptIssues: jsonb("first_attempt_issues").$type<string[]>(), // ce qui a déclenché la relance (null sinon)
   model: text("model").notNull(),
   sourceUrl: text("source_url").notNull(), // ajouté par le code, jamais par le LLM
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
