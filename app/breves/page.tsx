@@ -21,10 +21,6 @@ export default function BrevesPage() {
           ))}
           .
         </p>
-        <p className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
-          La vérification automatique ne remplace pas une relecture humaine : elle prouve qu&apos;un chiffre figure dans le
-          document, pas que la brève l&apos;interprète correctement.
-        </p>
       </header>
       <Suspense fallback={<p className="text-sm text-muted-foreground">Chargement…</p>}>
         <BriefList />
