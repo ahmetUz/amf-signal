@@ -87,7 +87,7 @@ Les raisons de chaque score sont affichées dans le fil.
 
 **Limites connues**
 
-- À score égal, le départage favorise les sociétés du CAC 40. Les 5 brèves concernent donc de grandes sociétés, alors que Clardot couvre aussi les PME (nous avons raté AgroGeneration).
+- Beaucoup de publications ont le même score (124 ont le score maximal), mais seules 10 sont lues par l'IA. Pour choisir ces 10, on prend d'abord les sociétés du CAC 40. Les 5 brèves concernent donc de grandes sociétés, alors que Clardot couvre aussi les PME (nous avons raté AgroGeneration).
 - La sélection porte sur toutes les publications en base. Un vrai fil de veille sélectionnerait plutôt sur le dernier jour ouvré, pour que les brèves restent de l'actualité.
 - Les titres vagues ne passent jamais à la grille. Piste : lire la première page du PDF pour ces titres.
 
@@ -180,12 +180,12 @@ C'est la limite de notre contrôle : il prouve qu'un chiffre est dans le documen
 ### Ce que je ferais avec plus de temps
 
 **Avec un jour de plus**
-- Départager les ex aequo sur l'événement plutôt que sur la taille de la société.
-- Ajouter un chapô et un titre plus éditorial, comme Clardot.
+- Améliorer le système de score : une échelle plus fine que 0 à 3 (une acquisition vaut plus qu'un simple chiffre d'affaires), et quand plusieurs publications ont le même score, choisir selon l'événement annoncé et non selon la taille de la société, en faisant lire par l'IA toutes les publications au score maximal, ce qui coûte peu.
 - Lire les tableaux des PDF comme des tableaux.
 - Garder la version anglaise quand elle est la seule.
 
 **Architecture cible**
+- Un score par profil de lecteur : tout le monde ne suit pas les mêmes informations. Un analyste M&A veut les acquisitions et les offres publiques, un directeur financier les résultats de ses concurrents, un investisseur les sociétés de son portefeuille. Le score combinerait l'importance de l'événement et l'intérêt du lecteur (sociétés, secteurs et types d'information suivis).
 - Une queue BullMQ avec un worker sur Railway, une reprise sur échec et un budget de tokens.
 - Des personas LLM qui notent les brèves : analyste M&A, directeur financier, journaliste.
 - Un suivi de lecture (temps de lecture, Intersection Observer), puis un clustering des lecteurs et du filtrage collaboratif.
