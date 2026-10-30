@@ -1,4 +1,4 @@
-import { and, desc, eq, ilike, or, sql, type SQL } from "drizzle-orm";
+import { and, desc, eq, ilike, isNull, or, sql, type SQL } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { publications } from "@/lib/db/schema";
 import type { PublicationFilters } from "./filters";
@@ -9,7 +9,7 @@ const parisDay = sql<string>`to_char(${publications.publishedAt} at time zone 'E
 const MAX_ROWS = 500;
 
 function whereClause({ q, subtype, day }: PublicationFilters): SQL | undefined {
-  const conditions: (SQL | undefined)[] = [];
+  const conditions: (SQL | undefined)[] = [isNull(publications.duplicateOf)]; // doublons masqués
   if (q) conditions.push(or(ilike(publications.company, `%${q}%`), ilike(publications.isin, `%${q}%`)));
   if (subtype) conditions.push(eq(publications.infoSubtype, subtype));
   if (day) conditions.push(eq(parisDay, day));
@@ -52,6 +52,7 @@ export async function listFilterOptions() {
     db
       .select({ value: publications.infoSubtype, count: sql<number>`count(*)::int` })
       .from(publications)
+      .where(isNull(publications.duplicateOf))
       .groupBy(publications.infoSubtype)
       .orderBy(desc(sql`count(*)`)),
     db

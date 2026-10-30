@@ -1,4 +1,4 @@
-import { desc, eq, inArray, sql } from "drizzle-orm";
+import { desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { publications } from "@/lib/db/schema";
 import { getDocument } from "@/lib/documents/store";
@@ -56,6 +56,7 @@ async function topCandidates() {
       cac40: isCac40,
     })
     .from(publications)
+    .where(isNull(publications.duplicateOf)) // un doublon ne doit pas prendre la place d'une autre candidate
     // uin en dernier : 116 publications sur 187 ont une heure arrondie à la minute. Sans ce critère,
     // les ex aequo reviennent dans un ordre variable et la sélection n'est plus reproductible.
     .orderBy(desc(publications.score), desc(isCac40), desc(publications.publishedAt), publications.uin)

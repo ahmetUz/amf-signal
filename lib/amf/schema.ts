@@ -5,6 +5,7 @@ import { z } from "zod";
 export const amfRecordSchema = z.object({
   uin_idt_uin: z.string().min(1),
   uin_dat_amf: z.iso.datetime({ offset: true }),
+  timezone_uin_dat_amf: z.string().nullish(), // décalage utilisé par la source pour calculer uin_dat_amf (voir date.ts)
   identificationsociete_iso_cd_isi: z.string().nullable(),
   identificationsociete_iso_nom_soc: z.string().min(1),
   identificationsociete_iso_pay_ss: z.string().nullable(),

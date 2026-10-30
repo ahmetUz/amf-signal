@@ -18,6 +18,7 @@ export const publications = pgTable("publications", {
   finalScore: integer("final_score"), // calculé par le code à partir de la grille
   finalReasons: jsonb("final_reasons").$type<string[]>(),
   selected: boolean("selected").notNull().default(false),
+  duplicateOf: text("duplicate_of"), // uin de la publication d'origine si c'est un doublon (voir lib/publications/duplicates.ts)
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 }).enableRLS(); // RLS sans policy : l'API REST de Supabase est bloquée, et le rôle postgres (propriétaire) passe toujours.
