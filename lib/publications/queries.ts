@@ -35,8 +35,12 @@ export async function listPublications(filters: PublicationFilters) {
     })
     .from(publications)
     .where(whereClause(filters))
-    // Fil chronologique ; uin départage les dépôts à la même minute pour un ordre stable.
-    .orderBy(desc(publications.publishedAt), publications.uin)
+    // Par jour, puis les plus importantes d'abord : score final (grille) s'il existe, sinon score par règles.
+    // Limite assumée : les échelles diffèrent (règles 0 à 3, score final jusqu'à 9 environ), et seules les
+    // 10 candidates ont un score final. Une candidate classée « autre » par la grille peut donc passer sous
+    // une publication non analysée.
+    // uin départage les dépôts à la même minute pour un ordre stable.
+    .orderBy(desc(parisDay), sql`coalesce(${publications.finalScore}, ${publications.score}) desc nulls last`, desc(publications.publishedAt), publications.uin)
     .limit(MAX_ROWS);
 }
 

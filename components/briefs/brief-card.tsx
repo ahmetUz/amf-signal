@@ -6,7 +6,7 @@ import { FigureBadge } from "./figure-badge";
 export function BriefCard({ brief }: { brief: BriefRow }) {
   const status = STATUS_DISPLAY[brief.status];
   return (
-    <article className="space-y-4 py-8">
+    <article id={brief.uin} className="scroll-mt-6 space-y-4 py-8 motion-safe:animate-rise target:bg-mark-soft/40">
       <header className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2 font-mono text-[11.5px] font-bold uppercase tracking-[.07em] text-[#3e5566]">

@@ -1,6 +1,6 @@
 import { Suspense } from "react";
-import { FilterChips } from "@/components/publications/filter-chips";
-import { PublicationsFeed, SelectedStrip } from "@/components/publications/publications-feed";
+import { FiltersSidebar } from "@/components/publications/filters-sidebar";
+import { PublicationsFeed } from "@/components/publications/publications-feed";
 import { parseFilters } from "@/lib/publications/filters";
 import { listFilterOptions, listPublications } from "@/lib/publications/queries";
 
@@ -27,13 +27,19 @@ async function PublicationsSection({ searchParams }: { searchParams: SearchParam
   const filters = parseFilters(await searchParams);
   const [rows, options] = await Promise.all([listPublications(filters), listFilterOptions()]);
   return (
-    <div className="space-y-4">
-      <FilterChips filters={filters} subtypes={options.subtypes} days={options.days} />
-      <p className="text-sm text-muted-foreground">
-        {rows.length} résultat{rows.length > 1 ? "s" : ""}
-      </p>
-      <SelectedStrip rows={rows} />
-      <PublicationsFeed rows={rows} />
+    <div className="grid gap-10 lg:grid-cols-[260px_minmax(0,1fr)]">
+      <FiltersSidebar
+        filters={filters}
+        subtypes={options.subtypes}
+        days={options.days}
+        selected={rows.filter((r) => r.selected)}
+      />
+      <div>
+        <p className="text-sm text-muted-foreground">
+          {rows.length} résultat{rows.length > 1 ? "s" : ""}
+        </p>
+        <PublicationsFeed rows={rows} />
+      </div>
     </div>
   );
 }
