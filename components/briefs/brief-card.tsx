@@ -75,7 +75,14 @@ export function BriefCard({ brief, index }: { brief: BriefRow; index: number }) 
         ))}
       </ul>
 
-      {brief.figures.length > 0 && <FiguresAccordion brief={brief} />}
+      {brief.figures.length > 0 ? (
+        <FiguresAccordion brief={brief} />
+      ) : (
+        <p className="max-w-[68ch] rounded-md bg-embargo-soft px-3 py-2 text-[13px] text-embargo">
+          <span className="font-semibold">Aucun chiffre à contrôler.</span> La brève ne repose que sur des faits : relisez-la
+          avec le document source.
+        </p>
+      )}
 
       <footer className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[13px] text-muted-foreground">
         <a

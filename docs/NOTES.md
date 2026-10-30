@@ -80,8 +80,11 @@ Règles strictes :
 - n'utilise aucun chiffre absent du document ;
 - ne calcule rien : ni variation, ni conversion, ni arrondi, ni total ;
 - n'ajoute aucune information extérieure au document ;
+- ignore la présentation générique de la société (section « À propos », « About », effectifs, nombre de clients) : n'en tire ni fait ni chiffre ;
 - ne reformule jamais une citation_exacte.
 ```
+
+Changement du 30/10/2026 : ajout de la règle « À propos ». Les 2 seuls chiffres de la brève STMicro (49 000 collaborateurs, 200 000 clients) venaient du paragraphe de présentation de la société, pas de l'annonce. Brève régénérée : plus aucun chiffre, seulement les nominations (statut « à confirmer », car une brève sans chiffre ne prouve rien).
 
 ### Relance (une seule, `lib/briefs/generate.ts`)
 
@@ -97,6 +100,14 @@ Premier essai (30/10/2026, 5 brèves) : 4 sur 5 ont eu besoin d'une relance, et 
 ### Contrôle des citations : tolérance sur la ponctuation des bords (30/10/2026)
 
 Les 3 chiffres « à confirmer » de Capgemini avaient une citation identique au document mot pour mot, mais terminée par « ; » au lieu d'un point (le modèle a repris le style d'une liste à puces). Le contrôle (a) ignore désormais la ponctuation en début et en fin de citation (`. , ; : ! ? … « » " ' ( )`). L'intérieur reste exigé mot pour mot, et le tiret n'est pas retiré (ce peut être un signe moins). Statuts recalculés par le code, sans nouvel appel au LLM : 42 chiffres vérifiés sur 42.
+
+## Relecture extérieure du 30/10/2026 : ce qui a été corrigé
+
+- **Règles** (tests sur les titres réels) : une annonce d'événement (« visioconférence », « webinaire », « réunion d'information ») passe en routine avant tout le reste (Gold by Gold) ; « trimestr » passe après la routine (« Mise à disposition du rapport trimestriel » de LECTRA valait 3, vaut 0) ; ajout de « bénéfice » et « perte » (Toosla valait 1) ; « étude de phase » et « essai clinique » nommés comme tels (OSE) ; opérations listées avant les indicateurs, pour que la raison affichée soit « acquisition de » plutôt que « chiffre d'affaires » (UNIFY). Sélection recalculée : inchangée, grilles réutilisées.
+- **Vérification** : un nombre collé à des lettres (« T3 », « 3ème », « 1er ») n'est plus un nombre ; dans une fourchette « 3 à 4 % », le premier nombre prend l'unité du second ; un pourcentage n'est plus validé par un nombre nu. Statuts recalculés : inchangés, mais le « 3 % » de Capgemini est désormais validé par la fourchette et non par n'importe quel « 3 ».
+- **Relances visibles** sur `/breves` : Capgemini (190 mots) et Sanofi (157 mots) dépassaient la limite de 150 mots demandée dans le prompt ; le code l'a détecté et a relancé.
+- **Non retenu** : écrire « Md$ » au lieu de « G$ ». « G$ » est l'unité du document de TotalEnergies ; on garde l'unité source pour que le chiffre corresponde à sa citation.
+- **Limites restantes du critère, notées pour le README** : Schneider (émission obligataire de 6 Md€) et BNP (rachat de 1,3 Md€) sont au maximum ou presque des règles, mais le départage favorise le CAC 40 ; les titres vagues (« Informations privilégiées / Autres communiqués » : Pernod Ricard, Arkema, Gecina) restent à 1 et n'atteignent jamais la grille (piste : lire la première page du PDF pour ces titres) ; les 5 brèves concernent des sociétés du CAC 40, alors que Clardot couvre aussi les PME.
 
 ## Comparaison avec Clarsource et Clardot (30/10/2026)
 

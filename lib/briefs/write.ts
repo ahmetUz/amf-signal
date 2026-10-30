@@ -31,6 +31,7 @@ Règles strictes :
 - n'utilise aucun chiffre absent du document ;
 - ne calcule rien : ni variation, ni conversion, ni arrondi, ni total ;
 - n'ajoute aucune information extérieure au document ;
+- ignore la présentation générique de la société (section « À propos », « About », effectifs, nombre de clients) : n'en tire ni fait ni chiffre ;
 - ne reformule jamais une citation_exacte.`;
 
 export const RETRY_INSTRUCTIONS = `Le contrôle automatique a détecté des problèmes dans ta brève précédente.
