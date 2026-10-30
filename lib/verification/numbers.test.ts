@@ -62,7 +62,19 @@ describe("extractNumbers : unités et échelles", () => {
   });
 
   it("ne prend pas une lettre isolée pour une unité (« 9M 2026 » n'est pas 9 millions)", () => {
-    expect(extractNumbers("Indicateurs d'activité du 9M 2026").map((n) => n.value)).toEqual([9, 2026]);
+    expect(extractNumbers("Indicateurs d'activité du 9M 2026").map((n) => n.value)).toEqual([2026]);
+  });
+
+  // Relecture extérieure : un « 3 % » de la brève pouvait être validé par le « 3 » de « T3 ».
+  it("ignore un nombre collé à des lettres (T3, 3ème, 1er, 9M)", () => {
+    expect(extractNumbers("Au T3 2026, 3ème trimestre, le 1er semestre et le 9M").map((n) => n.raw)).toEqual(["2026"]);
+  });
+
+  it("donne au premier nombre d'une fourchette l'unité du second (« 3 à 4 % »)", () => {
+    const [low, high] = extractNumbers("une croissance de 3 à 4 % au quatrième trimestre");
+    expect(low).toMatchObject({ value: 3, percent: true, hasUnit: true });
+    expect(high).toMatchObject({ value: 4, percent: true });
+    expect(extractNumbers("entre 1,2 et 1,5 Md€")[0]).toMatchObject({ value: 1.2e9, hasUnit: true });
   });
 });
 
@@ -97,6 +109,15 @@ describe("containsFigure", () => {
 
   it("retrouve un chiffre dans un tableau sans unité (« en millions d'euros »)", () => {
     expect(found("(en millions d'euros) Chiffre d'affaires 1 560 1 426", { valeur: "1 560", unite: "M€" })).toBe(true);
+  });
+
+  it("valide le bas d'une fourchette (« 3 à 4 % » contient bien 3 %)", () => {
+    expect(found("une croissance de 3 à 4 % au quatrième trimestre", { valeur: "3", unite: "%" })).toBe(true);
+  });
+
+  it("ne valide pas un pourcentage avec un nombre sans unité (« 3ème trimestre », « 3 sites »)", () => {
+    expect(found("au 3ème trimestre, une hausse de 5 %", { valeur: "3", unite: "%" })).toBe(false);
+    expect(found("le groupe ouvre 3 sites", { valeur: "3", unite: "%" })).toBe(false);
   });
 
   it("renvoie null pour une valeur illisible", () => {

@@ -23,7 +23,11 @@ const NUMBER = String.raw`[+\-−–]?\s?(?:\d{1,3}(?:[ \u00A0\u202F]\d{3})+(?!\
 // Unités relevées dans les documents. Les plus longues d'abord (« Mds » avant « M€ »).
 // « M » seul n'en fait pas partie : « 9M 2026 » signifie « 9 mois », pas 9 millions.
 const UNIT = String.raw`%|Mds?€?|milliards?|G\$|G€|M€|M\s?EUR|M\$|millions?|K\s?EUR|k€|k\$|milliers?|€|EUR|euros?|\$|USD`;
-const NUMBER_WITH_UNIT = new RegExp(`(${NUMBER})(?:\\s?(${UNIT})(?![\\p{L}\\d]))?`, "giu");
+// Un nombre collé à des lettres n'en est pas un : « T3 », « 3ème », « 1er », « 9M ». Sans ces gardes,
+// le « 3 » de « T3 » pouvait valider le « 3 % » d'une brève.
+const NUMBER_WITH_UNIT = new RegExp(`(?<![\\p{L}\\d])(${NUMBER})(?:\\s?(${UNIT})(?![\\p{L}\\d]))?(?![\\p{L}])`, "giu");
+// Fourchette « 3 à 4 % », « 1,2 et 1,5 Md€ » : le premier nombre prend l'unité du second.
+const RANGE_LINK = /^\s*(?:à|et)\s*$/;
 
 const SCALES: [RegExp, number][] = [
   [/^(mds?€?|milliards?|g\$|g€)$/, 1e9],
@@ -41,7 +45,10 @@ const round = (n: number) => Math.round(n * 1e6) / 1e6;
 
 /** Extrait les nombres d'un texte avec leur unité, ramenés à une même échelle. */
 export function extractNumbers(text: string): ExtractedNumber[] {
-  return [...text.matchAll(NUMBER_WITH_UNIT)].map(([raw, number, unit]) => {
+  const matches = [...text.matchAll(NUMBER_WITH_UNIT)];
+  return matches.map((match, i) => {
+    const [raw, number] = match;
+    const unit = match[2] ?? rangeUnit(text, match, matches[i + 1]);
     const mantissa = parseNumber(number);
     return {
       raw: raw.trim(),
@@ -51,6 +58,14 @@ export function extractNumbers(text: string): ExtractedNumber[] {
       hasUnit: Boolean(unit),
     };
   });
+}
+
+/** L'unité du nombre suivant si les deux forment une fourchette (« 3 à 4 % », « 3-4 % »), sinon undefined. */
+function rangeUnit(text: string, match: RegExpExecArray, next: RegExpExecArray | undefined): string | undefined {
+  if (!next?.[2]) return undefined;
+  const between = text.slice(match.index + match[0].length, next.index);
+  const dashRange = between.trim() === "" && /^[-–]/.test(next[1]); // « 3-4 % » : le tiret est lu comme signe de « -4 »
+  return RANGE_LINK.test(between) || dashRange ? next[2] : undefined;
 }
 
 /** Un chiffre tel que le LLM le rend dans une brève : « 7,3 » + « Md€ ». */
@@ -72,7 +87,8 @@ export function parseFigure({ valeur, unite }: Figure): ExtractedNumber | null {
  */
 export function containsFigure(text: string, figure: ExtractedNumber): boolean {
   return extractNumbers(text).some((candidate) => {
-    if (!candidate.hasUnit) return Math.abs(candidate.mantissa) === Math.abs(figure.mantissa);
+    // Le repli sans unité ne vaut pas pour un pourcentage : un « 3 » nu (« 3 sites ») ne prouve pas « 3 % ».
+    if (!candidate.hasUnit) return !figure.percent && Math.abs(candidate.mantissa) === Math.abs(figure.mantissa);
     return candidate.percent === figure.percent && Math.abs(candidate.value) === Math.abs(figure.value);
   });
 }
