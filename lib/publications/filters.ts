@@ -22,3 +22,13 @@ export function parseFilters(params: SearchParams): PublicationFilters {
     day: day && DAY_PATTERN.test(day) ? day : undefined,
   };
 }
+
+/** URL de la liste avec un filtre modifié, les autres conservés. Une valeur undefined retire le filtre. */
+export function hrefWith(filters: PublicationFilters, patch: Partial<PublicationFilters>): string {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries({ ...filters, ...patch })) {
+    if (value) params.set(key, value);
+  }
+  const query = params.toString();
+  return query ? `/?${query}` : "/";
+}

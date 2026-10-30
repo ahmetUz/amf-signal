@@ -66,7 +66,7 @@ const LEVELS: Level[] = [
 ];
 
 /** Minuscules, sans accents, apostrophes typographiques remplacées par ', espaces multiples réduits. */
-function normalize(text: string): string {
+export function normalize(text: string): string {
   return text
     .toLowerCase()
     .normalize("NFD")

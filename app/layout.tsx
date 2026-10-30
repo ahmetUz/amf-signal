@@ -1,17 +1,11 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Schibsted_Grotesk, Spline_Sans_Mono } from "next/font/google";
 import "./globals.css";
 import { SiteNav } from "@/components/layout/site-nav";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+// Polices du design system Finadory (Clarsource) : Schibsted Grotesk pour le texte, Spline Sans Mono pour les étiquettes.
+const schibsted = Schibsted_Grotesk({ variable: "--font-schibsted", subsets: ["latin"] });
+const splineMono = Spline_Sans_Mono({ variable: "--font-spline-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "AMF Signal",
@@ -22,7 +16,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="fr"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${schibsted.variable} ${splineMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <SiteNav />

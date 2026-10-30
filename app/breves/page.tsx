@@ -7,10 +7,10 @@ export const metadata = { title: "Brèves · AMF Signal" };
 
 export default function BrevesPage() {
   return (
-    <main className="mx-auto w-full max-w-3xl space-y-6 px-6 py-10">
+    <main className="mx-auto w-full max-w-[1280px] space-y-2 px-6 py-10">
       <header className="space-y-3">
-        <h1 className="text-2xl font-semibold tracking-tight">Brèves</h1>
-        <p className="text-sm text-muted-foreground">
+        <h1 className="text-[28px] font-bold tracking-[-.025em]">Brèves</h1>
+        <p className="max-w-[68ch] text-sm text-muted-foreground">
           Rédigées par IA à partir des publications sélectionnées. Chaque chiffre est contrôlé automatiquement
           dans le document source :{" "}
           {Object.values(STATUS_DISPLAY).map((s, i) => (
@@ -35,7 +35,7 @@ async function BriefList() {
     return <p className="py-12 text-center text-sm text-muted-foreground">Aucune brève générée pour l&apos;instant.</p>;
   }
   return (
-    <div className="space-y-6">
+    <div className="divide-y border-t border-foreground">
       {briefs.map((brief) => <BriefCard key={brief.uin} brief={brief} />)}
     </div>
   );

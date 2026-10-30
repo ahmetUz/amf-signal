@@ -35,7 +35,8 @@ export async function listPublications(filters: PublicationFilters) {
     })
     .from(publications)
     .where(whereClause(filters))
-    .orderBy(desc(publications.selected), sql`${publications.finalScore} desc nulls last`, desc(publications.publishedAt))
+    // Fil chronologique ; uin départage les dépôts à la même minute pour un ordre stable.
+    .orderBy(desc(publications.publishedAt), publications.uin)
     .limit(MAX_ROWS);
 }
 
