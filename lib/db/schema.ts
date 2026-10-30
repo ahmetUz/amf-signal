@@ -37,3 +37,33 @@ export const documents = pgTable("documents", {
   error: text("error"),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 }).enableRLS();
+
+export const figureStatuses = ["verifie", "a_confirmer", "non_verifiable"] as const;
+
+// Un chiffre de brève après vérification : ce que le LLM a fourni, plus le résultat des trois contrôles.
+export type CheckedFigure = {
+  valeur: string;
+  unite: string;
+  citation_exacte: string;
+  status: (typeof figureStatuses)[number];
+  citationInSource: boolean;
+  figureInCitation: boolean;
+  figureInBody: boolean;
+};
+
+export const briefs = pgTable("briefs", {
+  publicationUin: text("publication_uin")
+    .primaryKey()
+    .references(() => publications.uin, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  body: text("body").notNull(),
+  keyFacts: jsonb("key_facts").$type<string[]>().notNull(),
+  figures: jsonb("figures").$type<CheckedFigure[]>().notNull(),
+  status: text("status", { enum: figureStatuses }).notNull(), // statut du chiffre le moins sûr
+  wordCount: integer("word_count").notNull(), // compté par le code
+  attempts: integer("attempts").notNull(), // 1, ou 2 s'il y a eu une relance
+  model: text("model").notNull(),
+  sourceUrl: text("source_url").notNull(), // ajouté par le code, jamais par le LLM
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}).enableRLS();

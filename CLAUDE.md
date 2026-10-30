@@ -27,7 +27,7 @@ Ne commence pas une partie tant que la précédente ne fonctionne pas de bout en
 - **Next.js** (App Router) en TypeScript strict. Le front et le back sont dans le même projet (route handlers et server actions).
 - **UI** : Tailwind et shadcn/ui, le design system utilisé chez Finadory.
 - **Base de données** : PostgreSQL sur Supabase, via Drizzle ORM. Driver `postgres`, avec `prepare: false` derrière le pooler Supabase.
-- **LLM** : l'API Claude avec `@anthropic-ai/sdk`. Les sorties structurées passent par les structured outputs (`client.messages.parse` et `output_config.format` avec un schéma Zod), revalidées par Zod. Le tool use forcé et la température renvoient une 400 sur les modèles 5.5. Modèles : `claude-haiku-5-5` pour la sélection, `claude-sonnet-5-5` pour les brèves.
+- **LLM** : l'API Claude avec `@anthropic-ai/sdk`. Les sorties structurées passent par les structured outputs (`client.messages.parse` et `output_config.format` avec un schéma Zod), revalidées par Zod. Le tool use forcé et la température renvoient une 400 sur les modèles 5.5. Modèle : `claude-haiku-5-5` pour la sélection et pour les brèves. C'est un test technique : le coût reste minimal, et la vérification des chiffres par le code compense le recours à un modèle léger.
 - **PDF** : `unpdf` pour extraire le texte, car il fonctionne en serverless.
 - **Tests** : Jest, comme dans la stack Finadory.
 - **Déploiement** : Vercel, avec Vercel Cron pour la collecte.
@@ -94,7 +94,7 @@ Les raisons du score sont stockées et affichées dans l'interface.
 
 ## Brèves
 
-- **Modèle** : Claude Sonnet.
+- **Modèle** : Claude Haiku 5.5. On a choisi le modèle léger plutôt que Sonnet : la vérification des chiffres et la relance contrôlent la qualité.
 - **Entrée** : le texte extrait et les métadonnées de la publication.
 - **Sortie structurée** : titre, corps de 100 à 150 mots, faits clés, chiffres sous la forme `[{ valeur, unité, citation_exacte }]` et lien vers la source.
 - **Règles du prompt** : aucun chiffre calculé ou absent du document, et une citation exacte du passage source pour chaque chiffre.
