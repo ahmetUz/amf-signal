@@ -33,6 +33,16 @@ function FiguresAccordion({ brief }: { brief: BriefRow }) {
   );
 }
 
+// La première version a été rejetée par le contrôle automatique : on montre pourquoi, preuve que la relance a servi.
+function RetryNote({ issues }: { issues: string[] | null }) {
+  return (
+    <div className="max-w-[68ch] rounded-md bg-embargo-soft px-3 py-2 text-[13px] text-embargo">
+      <span className="font-semibold">Relancée une fois.</span> La première version avait été rejetée par le contrôle :{" "}
+      {issues && issues.length > 0 ? issues.join(" ") : "motif non conservé."}
+    </div>
+  );
+}
+
 export function BriefCard({ brief, index }: { brief: BriefRow; index: number }) {
   const category = categoryOf({ title: brief.publicationTitle, subtype: brief.infoSubtype });
   return (
@@ -79,11 +89,13 @@ export function BriefCard({ brief, index }: { brief: BriefRow; index: number }) 
         </a>
         <span>{brief.wordCount} mots</span>
         <span>{brief.model}</span>
-        <span>{brief.attempts === 2 ? "1 relance" : "sans relance"}</span>
+        {brief.attempts === 1 && <span>sans relance</span>}
         {brief.finalScore !== null && (
           <span title={brief.finalReasons?.join("\n")}>Score de sélection {brief.finalScore}</span>
         )}
       </footer>
+
+      {brief.attempts === 2 && <RetryNote issues={brief.firstAttemptIssues} />}
     </article>
   );
 }

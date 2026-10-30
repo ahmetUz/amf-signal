@@ -13,6 +13,7 @@ export async function listBriefs() {
       status: briefs.status,
       wordCount: briefs.wordCount,
       attempts: briefs.attempts,
+      firstAttemptIssues: briefs.firstAttemptIssues,
       model: briefs.model,
       sourceUrl: briefs.sourceUrl,
       company: publications.company,

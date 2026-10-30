@@ -135,3 +135,53 @@ describe("scoreByRules : événements graves ou structurants", () => {
     });
   });
 });
+
+// Cas signalés par une relecture extérieure (30/10/2026), titres réels.
+describe("scoreByRules : corrections après relecture", () => {
+  it("la mise à disposition d'un rapport trimestriel est de la routine (LECTRA)", () => {
+    const result = scoreByRules({
+      title: "LECTRA : Mise à disposition du rapport financier trimestriel au 30 septembre 2026",
+      subtype: "Information financière trimestrielle",
+    });
+    expect(result).toEqual({ score: 0, reasons: ["Routine : « mise à disposition »"] });
+  });
+
+  it("une publication trimestrielle sans autre signal reste un signal fort", () => {
+    const result = scoreByRules({
+      title: "LECTRA : Neuf premiers mois 2026 : amélioration structurelle de la rentabilité",
+      subtype: "Information financière trimestrielle",
+    });
+    expect(result).toEqual({ score: 3, reasons: ["Fort : « trimestr »"] });
+  });
+
+  it("l'annonce d'une visioconférence est de la routine, même si elle parle d'une opération (Gold by Gold)", () => {
+    const result = scoreByRules({
+      title: "Nouvelle visioconférence Gold by Gold à destination des actionnaires et investisseurs individuels dimanche 1er novembre 2026 à 18h00 dans le cadre de l'augmentation de capital destinée à l'acquisition de réserves d'Or",
+      subtype: "Informations privilégiées",
+    });
+    expect(result).toEqual({ score: 0, reasons: ["Routine : « visioconférence »"] });
+  });
+
+  it.each([
+    ["Toosla affiche le 1er bénéfice de son histoire au 1er semestre 2026 et prépare sa nouvelle feuille de route", "bénéfice"],
+    ["Sapmer accuse une perte nette au premier semestre", "perte"],
+  ])("« %s » est un signal fort", (title, keyword) => {
+    expect(scoreByRules({ title, subtype: "Informations privilégiées" })).toEqual({ score: 3, reasons: [`Fort : « ${keyword} »`] });
+  });
+
+  it("la raison affichée est l'opération, pas le chiffre d'affaires de la cible (UNIFY)", () => {
+    const result = scoreByRules({
+      title: "UNIFY Group annonce l'acquisition de ' Option Finance ', groupe média de référence de l'information financière professionnelle - réalisant plus de 4M EUR de chiffre d'affaires -",
+      subtype: "Informations privilégiées",
+    });
+    expect(result.reasons).toEqual(["Fort : « acquisition de »"]);
+  });
+
+  it("des résultats d'essai clinique sont nommés comme tels (OSE)", () => {
+    const result = scoreByRules({
+      title: "OSE Immunotherapeutics annonce des résultats positifs complémentaires de l'étude de Phase 2 randomisée Combi-TED de Tedopi® (OSE2101)",
+      subtype: "Informations privilégiées",
+    });
+    expect(result).toEqual({ score: 3, reasons: ["Fort : « étude de phase »"] });
+  });
+});

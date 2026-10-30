@@ -67,7 +67,7 @@ function Item({ row, index }: { row: PublicationRow; index: number }) {
         <div className="flex flex-wrap items-center gap-2 text-[13px] text-muted-foreground">
           <span className="rounded bg-muted px-2 py-[5px] font-semibold text-foreground transition-colors duration-200 group-hover:bg-white">{row.company}</span>
           <span>AMF</span>
-          <span className="font-mono text-xs">{row.isin}</span>
+          {row.isin ? <span className="font-mono text-xs">{row.isin}</span> : <span className="italic">ISIN non renseigné</span>}
           {row.country && row.country !== "FR" && <span>{row.country}</span>}
         </div>
       </div>
