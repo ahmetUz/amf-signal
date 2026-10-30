@@ -32,7 +32,22 @@ describe("quoteFoundIn", () => {
     expect(quoteFoundIn("Le chiffre d'affaires atteint 125 M€", source)).toBe(false);
   });
 
+  // Cas réel (Capgemini) : citation identique au document, mais terminée par « ; » au lieu d'un point.
+  it("ignore la ponctuation en début et en fin de citation", () => {
+    expect(quoteFoundIn("Le chiffre d'affaires atteint 120 M€ ;", source)).toBe(true);
+    expect(quoteFoundIn("« un accord pour l'acquisition de SAR ANLAGENBAU GmbH. »", source)).toBe(true);
+  });
+
+  it("garde la ponctuation à l'intérieur de la citation", () => {
+    expect(quoteFoundIn("SPIE signe un accord pour l'acquisition de SAR ANLAGENBAU GmbH ; Le chiffre", source)).toBe(false);
+  });
+
+  it("ne retire pas un signe moins en début de citation", () => {
+    expect(quoteFoundIn("-13,6 %", "une baisse de 13,6 % sur la période")).toBe(false);
+  });
+
   it("refuse une citation vide : elle serait trivialement « trouvée »", () => {
     expect(quoteFoundIn("   ", source)).toBe(false);
+    expect(quoteFoundIn(" ; ", source)).toBe(false);
   });
 });

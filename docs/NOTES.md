@@ -91,6 +91,10 @@ Réécris la brève complète en corrigeant ces problèmes, avec les mêmes règ
 
 Premier essai (30/10/2026, 5 brèves) : 4 sur 5 ont eu besoin d'une relance, et les 5 ont fini avec tous leurs chiffres `verifie` (46 chiffres). Le motif des premières tentatives n'a pas été conservé (voir les améliorations).
 
+### Contrôle des citations : tolérance sur la ponctuation des bords (30/10/2026)
+
+Les 3 chiffres « à confirmer » de Capgemini avaient une citation identique au document mot pour mot, mais terminée par « ; » au lieu d'un point (le modèle a repris le style d'une liste à puces). Le contrôle (a) ignore désormais la ponctuation en début et en fin de citation (`. , ; : ! ? … « » " ' ( )`). L'intérieur reste exigé mot pour mot, et le tiret n'est pas retiré (ce peut être un signe moins). Statuts recalculés par le code, sans nouvel appel au LLM : 42 chiffres vérifiés sur 42.
+
 ## Comparaison avec Clarsource et Clardot (30/10/2026)
 
 - **Clarsource** (le fil) ne rédige pas de brève pour une publication AMF. Il reprend le titre officiel, ajoute une étiquette de catégorie (« Résultats & Vie financière », « Nominations », « Fusions & Acquisitions »), le type et le sous-type AMF, puis renvoie vers le PDF.

@@ -1,7 +1,37 @@
 import type { BriefRow } from "@/lib/briefs/queries";
 import { categoryOf } from "@/lib/publications/category";
 import { formatDateTime } from "@/lib/format";
+import { STATUS_DISPLAY } from "@/lib/briefs/labels";
+import { figureStatuses } from "@/lib/db/schema";
 import { FigureCheck } from "./figure-check";
+
+// Liste des chiffres repliée par défaut : elle peut dépasser 15 lignes. Le résumé donne les compteurs par statut,
+// et l'accordéon s'ouvre d'emblée si un chiffre n'est pas vérifié, pour ne pas cacher un problème.
+function FiguresAccordion({ brief }: { brief: BriefRow }) {
+  return (
+    <details open={brief.status !== "verifie"} className="group/acc max-w-[68ch] rounded-lg border">
+      <summary className="flex cursor-pointer list-none flex-wrap items-center gap-2 px-4 py-3 transition-colors duration-150 hover:bg-muted [&::-webkit-details-marker]:hidden">
+        <span className="font-mono text-[11px] font-bold uppercase tracking-[.07em] text-slate-2">
+          {brief.figures.length} chiffres contrôlés
+        </span>
+        {figureStatuses.map((status) => {
+          const count = brief.figures.filter((f) => f.status === status).length;
+          if (count === 0) return null;
+          return (
+            <span key={status} className={`rounded px-1.5 py-0.5 text-xs font-semibold ${STATUS_DISPLAY[status].className}`}>
+              {count} {STATUS_DISPLAY[status].label.toLowerCase()}
+            </span>
+          );
+        })}
+        <span className="ml-auto text-lg leading-none text-muted-foreground transition-transform duration-200 group-open/acc:rotate-90">›</span>
+      </summary>
+      <div className="space-y-1.5 border-t p-3 motion-safe:animate-rise">
+        <p className="px-1 pb-1 text-xs text-muted-foreground">Cliquez sur un chiffre pour voir les trois contrôles.</p>
+        {brief.figures.map((f) => <FigureCheck key={`${f.valeur}-${f.unite}-${f.citation_exacte}`} figure={f} />)}
+      </div>
+    </details>
+  );
+}
 
 export function BriefCard({ brief, index }: { brief: BriefRow; index: number }) {
   const category = categoryOf({ title: brief.publicationTitle, subtype: brief.infoSubtype });
@@ -35,16 +65,7 @@ export function BriefCard({ brief, index }: { brief: BriefRow; index: number }) 
         ))}
       </ul>
 
-      {brief.figures.length > 0 && (
-        <section className="max-w-[68ch] space-y-2">
-          <h3 className="font-mono text-[11px] font-bold uppercase tracking-[.07em] text-slate-2">
-            Chiffres contrôlés · cliquez pour voir les contrôles
-          </h3>
-          <div className="space-y-1.5">
-            {brief.figures.map((f) => <FigureCheck key={`${f.valeur}-${f.unite}-${f.citation_exacte}`} figure={f} />)}
-          </div>
-        </section>
-      )}
+      {brief.figures.length > 0 && <FiguresAccordion brief={brief} />}
 
       <footer className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[13px] text-muted-foreground">
         <a
