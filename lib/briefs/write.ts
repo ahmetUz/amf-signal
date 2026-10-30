@@ -1,6 +1,5 @@
-import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
-import { anthropic } from "@/lib/llm/client";
+import { structuredCall } from "@/lib/llm/structured";
 
 export const BRIEF_MODEL = "claude-haiku-5-5";
 
@@ -52,17 +51,12 @@ function userMessage({ company, title, publishedAt, text }: BriefInput, retry?: 
   return `${base}\n\n${RETRY_INSTRUCTIONS}\n\n<brève_précédente>\n${JSON.stringify(retry.previous, null, 2)}\n</brève_précédente>\n\nProblèmes :\n${retry.issues.map((i) => `- ${i}`).join("\n")}`;
 }
 
-/** Demande une brève à Haiku. Le format est garanti par l'API (structured outputs) puis revalidé par Zod. */
+/** Demande une brève à Haiku en structured output (voir lib/llm/structured.ts). */
 export async function writeBrief(input: BriefInput, retry?: RetryContext): Promise<BriefOutput> {
-  const response = await anthropic.messages.parse({
+  return structuredCall(briefOutputSchema, {
     model: BRIEF_MODEL,
-    max_tokens: 8000,
-    output_config: { effort: "medium", format: zodOutputFormat(briefOutputSchema) },
+    effort: "medium",
     system: BRIEF_SYSTEM_PROMPT,
-    messages: [{ role: "user", content: userMessage(input, retry) }],
+    user: userMessage(input, retry),
   });
-
-  if (response.stop_reason === "refusal") throw new Error("Haiku a refusé de rédiger la brève");
-  if (response.stop_reason === "max_tokens") throw new Error("Réponse tronquée (max_tokens)");
-  return briefOutputSchema.parse(response.parsed_output);
 }

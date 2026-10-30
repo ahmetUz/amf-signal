@@ -1,5 +1,4 @@
-import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
-import { anthropic } from "@/lib/llm/client";
+import { structuredCall } from "@/lib/llm/structured";
 import { gridSchema, type Grid } from "./grid-schema";
 
 export const GRID_MODEL = "claude-haiku-5-5";
@@ -24,26 +23,12 @@ export type GridInput = {
   text: string;
 };
 
-/** Demande la grille factuelle à Haiku. Le format est garanti par l'API (structured outputs) puis revalidé par Zod. */
+/** Demande la grille factuelle à Haiku en structured output (voir lib/llm/structured.ts). */
 export async function fillGrid({ company, title, subtype, text }: GridInput): Promise<Grid> {
-  const response = await anthropic.messages.parse({
+  return structuredCall(gridSchema, {
     model: GRID_MODEL,
-    max_tokens: 4000,
-    output_config: {
-      effort: "low", // extraction de faits simples : pas besoin de raisonnement long
-      format: zodOutputFormat(gridSchema),
-    },
+    effort: "low", // extraction de faits simples : pas besoin de raisonnement long
     system: GRID_SYSTEM_PROMPT,
-    messages: [
-      {
-        role: "user",
-        content: `Société : ${company}\nType AMF : ${subtype ?? "non renseigné"}\nTitre : ${title}\n\n<document>\n${text}\n</document>`,
-      },
-    ],
+    user: `Société : ${company}\nType AMF : ${subtype ?? "non renseigné"}\nTitre : ${title}\n\n<document>\n${text}\n</document>`,
   });
-
-  if (response.stop_reason === "refusal") throw new Error("Haiku a refusé de remplir la grille");
-  if (response.stop_reason === "max_tokens") throw new Error("Réponse tronquée (max_tokens)");
-  // parsed_output est null si la sortie ne respecte pas le schéma : on revalide pour obtenir un type sûr.
-  return gridSchema.parse(response.parsed_output);
 }
