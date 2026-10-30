@@ -28,6 +28,7 @@
 - Titres génériques : au moins 25 publications ont pour titre la simple répétition de leur catégorie, par exemple « Informations privilégiées / Autres communiqués » ou « Information financière trimestrielle / Information financière du troisième trimestre ». Le titre ne dit alors rien de l'événement : seul le document permet de juger.
 - Pièges de mots-clés : un titre comme « Acquisition ou cession des actions de l'émetteur / Transactions sur actions propres » contient le mot « acquisition », alors qu'il s'agit d'un rachat d'actions courant, pas d'une opération de M&A. À l'inverse, « Malteries Franco Belges : Résultats de l'exercice […] et mise à disposition du Rapport financier annuel » contient « mise à disposition », mot typique de la routine, mais il annonce de vrais résultats.
 - Émetteurs non cotés : des collectivités locales déposent aussi dans le flux (« Délibération BP 2026 », « Délibération Augmentation de plafond EMTN »), car elles émettent des obligations.
+- Champ `cac40` irrégulier : il vaut « 1 » pour 24 publications, « 0 » pour 65 et null pour 98, alors que null et « 0 » signifient la même chose. Comme Postgres place les null en tête d'un tri DESC, le premier tri des candidates était faux : il a fallu un `coalesce(..., false)`.
 
 ## Prompts
 

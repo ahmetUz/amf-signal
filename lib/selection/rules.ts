@@ -39,6 +39,9 @@ const LEVELS: Level[] = [
       "directeur général",
       "direction générale",
       "objectifs",
+      "redressement judiciaire",
+      "accord de cession", // pas « cession de » : il correspond aussi à « cession des actions » (rachat courant)
+      "dépréciation",
     ],
   },
   {

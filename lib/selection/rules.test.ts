@@ -109,3 +109,17 @@ describe("scoreByRules : pièges observés dans le flux", () => {
     expect(scoreByRules({ title: "Rapport semestriel 2026", subtype: null }).score).toBe(1);
   });
 });
+
+// Oublis trouvés en lançant les règles à blanc sur les 187 publications réelles.
+describe("scoreByRules : événements graves ou structurants", () => {
+  it.each([
+    ["Ouverture d'une procédure de redressement judiciaire pour sa filiale Procédés Hallier et report de la publication des comptes semestriels", "redressement judiciaire"],
+    ["Prodways Group franchit une nouvelle étape dans sa stratégie avec un accord de cession de l'activité Matières", "accord de cession"],
+    ["Bouygues enregistre une dépréciation comptable de sa participation dans TF1, sans incidence sur sa trésorerie. Le Groupe réaffirme sa confiance dans la stratégie de transformation de TF1.", "dépréciation"],
+  ])("« %s » vaut 3", (title, keyword) => {
+    expect(scoreByRules({ title, subtype: "Informations privilégiées" })).toEqual({
+      score: 3,
+      reasons: [`Fort : « ${keyword} »`],
+    });
+  });
+});
