@@ -1,7 +1,7 @@
 import type { PublicationRow } from "@/lib/publications/queries";
 import { categoryOf } from "@/lib/publications/category";
 import { subtypeLabel } from "@/lib/publications/labels";
-import { formatDay, formatTime, parisDayOf } from "@/lib/format";
+import { formatDateTime, formatDay, parisDayOf } from "@/lib/format";
 
 /** Regroupe les lignes (déjà triées par jour) par jour de Paris, en gardant l'ordre de la requête. */
 function groupByDay(rows: PublicationRow[]): [string, PublicationRow[]][] {
@@ -76,7 +76,7 @@ function Item({ row, index }: { row: PublicationRow; index: number }) {
           <span className="text-foreground opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100 md:-translate-x-1">
             Ouvrir le PDF ↗
           </span>
-          <time className="text-muted-foreground tabular-nums">{formatTime(row.publishedAt)}</time>
+          <time className="text-muted-foreground tabular-nums">{formatDateTime(row.publishedAt)}</time>
         </div>
         <Score row={row} />
       </div>

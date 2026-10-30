@@ -16,9 +16,7 @@ const longDay = new Intl.DateTimeFormat("fr-FR", {
 export const formatDateTime = (date: Date) => dateTime.format(date);
 export const formatDay = (day: string) => longDay.format(new Date(`${day}T00:00:00Z`));
 
-const time = new Intl.DateTimeFormat("fr-FR", { timeZone: "Europe/Paris", hour: "2-digit", minute: "2-digit" });
 // en-CA formate en AAAA-MM-JJ : la même clé de jour que le filtre et que la requête SQL (heure de Paris).
 const isoDay = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris", year: "numeric", month: "2-digit", day: "2-digit" });
 
-export const formatTime = (date: Date) => time.format(date);
 export const parisDayOf = (date: Date) => isoDay.format(date);
