@@ -30,6 +30,11 @@
 - Émetteurs non cotés : des collectivités locales déposent aussi dans le flux (« Délibération BP 2026 », « Délibération Augmentation de plafond EMTN »), car elles émettent des obligations.
 - Champ `cac40` irrégulier : il vaut « 1 » pour 24 publications, « 0 » pour 65 et null pour 98, alors que null et « 0 » signifient la même chose. Comme Postgres place les null en tête d'un tri DESC, le premier tri des candidates était faux : il a fallu un `coalesce(..., false)`.
 - Conséquence de la précision à la minute : des publications sont ex aequo sur le score, le CAC 40 et la date. Sans critère de tri supplémentaire, Postgres renvoyait les candidates dans un ordre variable d'un appel à l'autre. On ajoute `uin` comme dernier critère pour que la sélection soit reproductible.
+- Formats de nombres relevés dans 10 PDF : `1,4 milliard d’euros`, `14 444 millions d’euros`, `+304 m€` (« m€ » en minuscules signifie millions), `491 Md€`, `9,1 G$`, `- 13,6 %` (signe séparé), `−42,2 %` (moins typographique), `250 pb`, `1,9 point`, ainsi que des tableaux « (en millions d'euros) » dont les cellules n'ont pas d'unité.
+- Limites connues de `lib/verification/numbers.ts` :
+  - unpdf aplatit les tableaux en une seule ligne, si bien que des cellules voisines peuvent fusionner en un seul nombre (« 477 464 429 » est lu comme 477 464 429). Le chiffre devient alors introuvable : on obtient un faux négatif (« à confirmer » ou « non vérifiable »), jamais un faux « vérifié » ;
+  - le format anglo-saxon `1,234.5` est mal lu ;
+  - un nombre sans unité dans le texte correspond à n'importe quelle échelle (repli nécessaire pour les tableaux). Le contrôle (a) sur la citation compense en partie ce manque de rigueur.
 
 ## Prompts
 
