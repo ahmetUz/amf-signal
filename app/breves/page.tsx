@@ -1,25 +1,17 @@
 import { Suspense } from "react";
 import { BriefCard } from "@/components/briefs/brief-card";
+import { BriefsSidebar } from "@/components/briefs/briefs-sidebar";
 import { listBriefs } from "@/lib/briefs/queries";
-import { STATUS_DISPLAY } from "@/lib/briefs/labels";
 
 export const metadata = { title: "Brèves · AMF Signal" };
 
 export default function BrevesPage() {
   return (
-    <main className="mx-auto w-full max-w-[1280px] space-y-2 px-6 py-10">
-      <header className="space-y-3">
+    <main className="mx-auto w-full max-w-[1280px] space-y-6 px-6 py-10">
+      <header className="space-y-1">
         <h1 className="text-[28px] font-bold tracking-[-.025em]">Brèves</h1>
-        <p className="max-w-[68ch] text-sm text-muted-foreground">
-          Rédigées par IA à partir des publications sélectionnées. Chaque chiffre est contrôlé automatiquement
-          dans le document source :{" "}
-          {Object.values(STATUS_DISPLAY).map((s, i) => (
-            <span key={s.label}>
-              {i > 0 && ", "}
-              <span className={`rounded px-1.5 py-0.5 text-xs ${s.className}`}>{s.label}</span>
-            </span>
-          ))}
-          .
+        <p className="text-sm text-muted-foreground">
+          Rédigées par IA à partir des publications sélectionnées, chiffres contrôlés dans le document source.
         </p>
       </header>
       <Suspense fallback={<p className="text-sm text-muted-foreground">Chargement…</p>}>
@@ -35,8 +27,11 @@ async function BriefList() {
     return <p className="py-12 text-center text-sm text-muted-foreground">Aucune brève générée pour l&apos;instant.</p>;
   }
   return (
-    <div className="divide-y border-t border-foreground">
-      {briefs.map((brief) => <BriefCard key={brief.uin} brief={brief} />)}
+    <div className="grid gap-10 lg:grid-cols-[260px_minmax(0,1fr)]">
+      <BriefsSidebar briefs={briefs} />
+      <div className="divide-y border-t border-foreground">
+        {briefs.map((brief, i) => <BriefCard key={brief.uin} brief={brief} index={i} />)}
+      </div>
     </div>
   );
 }
