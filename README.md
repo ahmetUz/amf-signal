@@ -1,110 +1,124 @@
 # AMF Signal
 
-Exercice technique pour FINADORY. L'application collecte les publications réglementées de l'AMF (info-financiere.gouv.fr), les affiche dans un fil filtrable, sélectionne celles qui méritent un article, rédige des brèves avec Claude et vérifie chacun de leurs chiffres dans le document source.
+Exercice technique pour FINADORY : une version simple d'un fil de veille sur les publications réglementées de l'AMF.
 
-- **Application déployée** : _à compléter (URL Vercel)_
-- **Code** : https://github.com/ahmetUz/amf-signal
+**Application** : https://amf-signal-test.vercel.app/
+
+---
+
+## 1. Le projet
+
+### Ce que fait l'application
+
+```
+Collecte AMF  →  Sélection  →  Brève (Claude Haiku)  →  Vérification des chiffres
+ 3 derniers jours    top 5       100 à 150 mots          chaque chiffre cherché dans le PDF
+```
 
 | Page | Contenu |
 | --- | --- |
-| `/` | Le fil AMF groupé par jour, les plus importantes d'abord. Filtres par société ou ISIN, date et type d'information. Score de sélection et ses raisons sur chaque publication. |
-| `/breves` | Les brèves, avec pour chaque chiffre son statut (vérifié, à confirmer, non vérifiable), les trois contrôles et la citation source. |
+| `/` | Le fil AMF par jour, les plus importantes d'abord. Filtres par société, date et type. Chaque publication affiche son score et ses raisons. |
+| `/breves` | Les 5 brèves. Chaque chiffre porte un statut : **vérifié**, **à confirmer** ou **non vérifiable**. Un clic montre les contrôles et la citation source. |
 
-> La vérification automatique ne remplace pas une relecture humaine : elle prouve qu'un chiffre figure dans le document, pas que la brève l'interprète correctement.
-
-## Lancer le projet
+### Lancer en local
 
 ```bash
 npm install
-cp .env.example .env.local   # DATABASE_URL, DATABASE_URL_MIGRATE, ANTHROPIC_API_KEY, CRON_SECRET
-npm run db:push              # crée les tables dans Supabase
+cp .env.example .env.local    # DATABASE_URL, DATABASE_URL_MIGRATE, ANTHROPIC_API_KEY, CRON_SECRET
+npm run db:push               # crée les tables
 npm run dev
-npm test                     # Jest : sélection, vérification des chiffres, filtres, auth
+npm test                      # 136 tests
 ```
 
-Le pipeline se lance par trois routes, toutes protégées par `Authorization: Bearer $CRON_SECRET` :
+Le pipeline se déclenche par trois routes protégées par un secret :
 
 ```bash
 H="Authorization: Bearer $CRON_SECRET"
-curl -X POST -H "$H" "localhost:3000/api/ingest?days=3"   # 1. collecte (idempotente)
-curl -X POST -H "$H" localhost:3000/api/select            # 2. score par règles + grille Haiku sur les 10 meilleures
-curl -X POST -H "$H" localhost:3000/api/briefs/<uin>      # 3. une brève par appel (?force=1 pour régénérer)
+curl -X POST -H "$H" "localhost:3000/api/ingest?days=3"   # 1. collecte
+curl -X POST -H "$H" localhost:3000/api/select            # 2. sélection
+curl -X POST -H "$H" localhost:3000/api/briefs/<uin>      # 3. une brève
 ```
 
-En production, Vercel Cron appelle `/api/ingest` chaque jour à 19 h UTC (`vercel.json`). C'est la limite du plan Hobby : une exécution par jour.
+En production, Vercel Cron lance la collecte chaque jour à 19 h UTC.
 
-## Choix techniques
+---
 
-- **Next.js 16 (App Router) en TypeScript strict, front et back dans un seul projet.** Les pages sont des Server Components qui lisent la base directement ; seule la barre de navigation tourne côté client. Les filtres sont dans l'URL (liens et formulaire GET) : aucun état client, et une vue filtrée se partage.
-- **Supabase Postgres + Drizzle ORM**, driver `postgres` avec `prepare: false` derrière le transaction pooler. Toutes les écritures sont des upserts sur l'identifiant AMF : relancer la collecte ne crée jamais de doublon.
-- **Claude Haiku 5.5** pour la grille de sélection et pour les brèves. C'est le modèle le moins coûteux ; la vérification des chiffres par le code compense le recours à un modèle léger. Les sorties passent par les *structured outputs* (`output_config.format` avec un schéma Zod), puis sont revalidées par Zod. Le code contrôle `stop_reason` avant de parser, pour qu'une réponse tronquée donne une erreur claire.
-- **unpdf** pour extraire le texte des PDF : il fonctionne en serverless. On n'extrait que les 3 premières pages, on refuse au-delà de 20 Mo (`Content-Length` vérifié avant le téléchargement) et on ne stocke jamais le PDF, seulement son URL et le texte.
-- **Une brève par appel HTTP**, pour tenir dans la limite de durée de Vercel. Pas de queue, de S3 ni de Redis : c'est volontaire pour un exercice de quelques heures (voir l'architecture cible plus bas).
-- **Logique métier dans `lib/`, en fonctions pures testées.** La sélection et la vérification ont été écrites en TDD (Jest, 136 tests).
-- **Interface** : Tailwind et shadcn/ui, avec la palette et la typographie de Clarsource (Schibsted Grotesk, Spline Sans Mono) pour rester dans l'esprit du produit.
+## 2. Comment ça marche
 
-## Comprendre les données
+### Choix techniques
 
-Je suis parti d'un vrai appel à l'API (Opendatasoft Explore v2.1, dataset `flux-amf-new-prod`) et je n'ai retenu que des champs observés : `uin_idt_uin` (identifiant), `uin_dat_amf` (date), `identificationsociete_iso_cd_isi` (ISIN), `identificationsociete_iso_nom_soc` (société), `sous_type_d_information`, `informationdeposee_inf_tit_inf` (titre), `informationdeposee_inf_lng_inf` (langue) et `url_de_recuperation` (document). Chaque enregistrement est validé par Zod : 0 rejet sur 187 publications en français collectées sur 3 jours.
+| Choix | Pourquoi |
+| --- | --- |
+| **Next.js** (App Router, TypeScript strict) | Front et back dans un seul projet. Les filtres sont dans l'URL : pas d'état côté client. |
+| **Supabase + Drizzle** | Postgres géré. Toutes les écritures sont des upserts : relancer la collecte ne crée jamais de doublon. |
+| **Claude Haiku 5.5** | Le modèle le moins cher. La vérification par le code compense un modèle léger. |
+| **Structured outputs + Zod** | Le format JSON est imposé par l'API, puis revalidé. |
+| **unpdf** | Fonctionne en serverless. On lit les 3 premières pages, 20 Mo maximum, et on ne stocke jamais le PDF. |
+| **Collecte des 3 derniers jours, chaque soir** | Le chiffre vient de la consigne (« 2 à 3 jours suffisent »). Il couvre le week-end (le lundi voit encore le vendredi soir) et laisse une marge si le cron échoue un soir. L'upsert évite les doublons. |
+| **Une brève par appel** | Tient dans la limite de durée de Vercel. Pas de queue : c'est volontaire pour un exercice de quelques heures. |
 
-Les imperfections rencontrées, et ce que j'en ai fait :
+La logique métier est dans `lib/`, en fonctions pures. La sélection et la vérification ont été écrites en TDD.
 
-- **Doublons bilingues** : la même information est déposée en français et en anglais, sous deux identifiants, à quelques secondes d'écart. Je ne collecte que le français (filtre dans la requête). Ce qu'on perd : les émetteurs qui ne publient qu'en anglais (1 sur 3 jours, Ayvens).
-- **Documents qui ne sont pas des PDF** : des paquets ESEF/XBRL en `.zip`. Ils sont ignorés pour les brèves avec le statut `pas_un_pdf`.
-- **Sous-type fourre-tout** : 110 publications sur 187 sont des « Informations privilégiées », qui couvrent aussi bien un contrat qu'une acquisition. Le sous-type ne suffit pas pour juger : il faut lire le titre, puis le document.
-- **Titres génériques** : au moins 25 titres répètent simplement leur catégorie (« Informations privilégiées / Autres communiqués »). Seul le document permet de juger.
-- **Pièges de mots-clés** : « Acquisition ou cession des actions de l'émetteur » est un rachat d'actions courant, pas une acquisition ; « Résultats […] et mise à disposition du rapport » annonce de vrais résultats malgré « mise à disposition ».
-- **Champ `cac40` irrégulier** : « 1 », « 0 » ou null (98 cas), null et « 0 » voulant dire la même chose. Postgres place les null en tête d'un tri décroissant : il a fallu un `coalesce`.
-- **Heures arrondies à la minute** pour 116 publications sur 187 : les ex aequo revenaient dans un ordre variable, et la sélection n'était pas reproductible. L'identifiant sert de dernier critère de tri.
-- **Heures fausses d'une heure** : la source calcule l'heure UTC en retirant 2 h (heure d'été, champ `timezone_uin_dat_amf`) alors que Paris est en UTC+1 depuis le 25/10. Sanofi, qui publie à 7 h 30, apparaissait à 6 h 30. On reconstitue l'heure de Paris, puis on la convertit avec le vrai fuseau (`lib/amf/date.ts`, testé).
-- **ISIN de remplissage** `999999999999` (collectivités, sociétés non cotées) : remplacé par null, affiché « ISIN non renseigné ».
-- **Doublons entre diffuseurs** : la même publication arrive parfois deux fois sous deux identifiants (D.L.S.I., Acheter-Louer.fr). Même société, même titre normalisé et moins de 3 jours d'écart : le second dépôt est masqué. Un titre reformulé (DBV Technologies) n'est pas reconnu.
-- **Émetteurs étrangers** (8 publications : NL, BE, DE, IT, GR) et **collectivités locales** qui émettent des obligations : gardés, le pays est stocké.
-- **Formats de nombres** très variés : `14 444 millions d'euros`, `+304 m€`, `9,1 G$`, `- 13,6 %` (signe séparé), `−42,2 %` (moins typographique), tableaux « en millions d'euros » sans unité dans les cellules.
+### Les données
 
-## Critère de sélection
+Source : l'API ouverte d'info-financiere.gouv.fr. Je n'ai utilisé que des champs observés sur un vrai appel, et chaque enregistrement est validé par Zod.
 
-Principe : **l'IA classe, le code décide.** On ne demande jamais au modèle si une publication est « intéressante ».
+| Problème rencontré | Ce que j'ai fait |
+| --- | --- |
+| Chaque publication existe en français et en anglais | Je ne garde que le français (on perd Ayvens, qui ne publie qu'en anglais). |
+| Les heures sont fausses d'une heure : la source applique l'heure d'été en hiver | On reconstitue l'heure de Paris, puis on la convertit avec le vrai fuseau. |
+| La même publication arrive par deux diffuseurs | Même société, même titre, moins de 3 jours d'écart : le second est masqué. |
+| ISIN de remplissage `999999999999` | Affiché « ISIN non renseigné ». |
+| Documents ZIP (ESEF) au lieu de PDF | Ignorés pour les brèves. |
+| 110 publications sur 187 sont des « Informations privilégiées » | Le type ne suffit pas : il faut lire le titre, puis le document. |
+| Titres vides de sens (« Autres communiqués ») | Score neutre : ils ne sont pas écartés. |
+| Nombres écrits de dix façons (`14 444 millions d'euros`, `9,1 G$`, `- 13,6 %`) | Normalisés par le code avant comparaison. |
 
-1. **Score par règles, sans ouvrir de document** (`lib/selection/rules.ts`, fonction pure, 21 tests sur des titres réels). Le titre et le sous-type sont comparés à trois listes de mots-clés ; le premier niveau qui correspond l'emporte :
-   - **Fort (3)** : résultats, chiffre d'affaires, acquisition, fusion, offre publique, augmentation de capital, nomination, direction générale, objectifs, redressement judiciaire, dépréciation…
-   - **Moyen (2)** : franchissement de seuil, programme de rachat.
-   - **Routine (0)** : droits de vote, actions propres, contrat de liquidité, honoraires, mise à disposition d'un document.
-   - **Sans correspondance (1)** : « à vérifier dans le document », pour ne pas écarter un titre générique.
-2. **Grille factuelle sur les 10 meilleures** (`lib/selection/grid.ts`). Haiku lit les 3 premières pages et ne remplit que des champs fermés : type d'événement, révision des objectifs, montant annoncé, impact sur le capital, impact sur la direction, plus une citation qui justifie le type. Le code calcule ensuite le score final (`final-score.ts`, testé) : de 1 à 5 points selon l'événement (offre publique, acquisition, changement de dirigeant : 5 ; résultats : 3, ou 5 avec une révision des objectifs), puis +1 par critère (montant, capital, direction, CAC 40). Si la citation est introuvable dans le document, la raison l'affiche.
-3. **Les 5 meilleures** sont sélectionnées. Les raisons de chaque score sont stockées et affichées dans le fil.
+Le détail est dans [`docs/NOTES.md`](docs/NOTES.md).
 
-Les grilles déjà calculées sont réutilisées : relancer la sélection ne coûte rien et donne le même résultat.
+### Le critère de sélection
 
-**Ce que la comparaison avec Clardot m'a appris.** Clardot a publié un article sur deux publications que nous n'avions pas retenues. Sapmer (« Rapport financier semestriel ») était classée en routine : erreur corrigée, seule la *mise à disposition* d'un rapport est de la routine. AgroGeneration avait le score maximal par règles mais a été écartée par le départage, qui favorise le CAC 40 : c'est un biais assumé et noté dans les améliorations.
+Le principe : **l'IA classe, le code décide.** On ne demande jamais au modèle si une publication est « intéressante ».
 
-## Contrôle de l'exactitude des chiffres
+1. **Des règles sur le titre** (sans IA) donnent un score : fort (résultats, acquisition, offre publique, nomination…), moyen (seuil, rachat d'actions) ou routine (droits de vote, mise à disposition d'un document…).
+2. **Pour les 10 meilleures**, Haiku lit le document et remplit une grille fermée : type d'événement, montant annoncé, impact sur le capital ou sur la direction. **Le code calcule le score final**, et les 5 meilleures reçoivent une brève.
 
-Pour chaque chiffre, la brève doit fournir la valeur, l'unité et la **citation exacte** du document qui le contient. Le code (`lib/verification/`, fonctions pures écrites en TDD) fait ensuite trois contrôles :
+Les raisons de chaque score sont affichées dans le fil.
 
-- **(a)** la citation figure mot pour mot dans le texte extrait, après normalisation des espaces (insécables compris) et des apostrophes, et sans tenir compte de la ponctuation en début et en fin de citation ;
-- **(b)** le chiffre apparaît dans la citation ;
-- **(c)** le chiffre apparaît dans le corps de la brève.
+**Limites connues**
 
-Les nombres sont comparés par valeur, pas par texte : `7,3 Md€`, `7 300 M€` et `7,3 milliards d'euros` sont égaux. Les espaces de milliers, la virgule décimale, les signes (`-`, `−`, `–`) et les échelles (`k€`, `M€`, `Md€`, `G$`, « millions »…) sont normalisés. Un pourcentage ne correspond qu'à un pourcentage, et une date n'est jamais comptée comme un chiffre.
+- À score égal, le départage favorise les sociétés du CAC 40. Les 5 brèves concernent donc de grandes sociétés, alors que Clardot couvre aussi les PME (nous avons raté AgroGeneration).
+- La sélection porte sur toutes les publications en base. Un vrai fil de veille sélectionnerait plutôt sur le dernier jour ouvré, pour que les brèves restent de l'actualité.
+- Les titres vagues ne passent jamais à la grille. Piste : lire la première page du PDF pour ces titres.
+
+### Le contrôle des chiffres
+
+Pour chaque chiffre, la brève doit donner la **citation exacte** du document. Le code vérifie ensuite trois choses :
+
+1. la citation est mot pour mot dans le document ;
+2. le chiffre est dans la citation ;
+3. le chiffre est dans la brève.
 
 | Statut | Signification |
 | --- | --- |
-| **Vérifié** | les trois contrôles passent |
-| **À confirmer** | le chiffre est dans le document, mais la citation n'est pas exacte |
-| **Non vérifiable** | le chiffre est introuvable dans le document |
+| 🟢 **Vérifié** | les trois contrôles passent |
+| 🟠 **À confirmer** | le chiffre est dans le document, mais la citation n'est pas exacte |
+| ⚪ **Non vérifiable** | le chiffre est introuvable |
 
-Si un chiffre est non vérifiable, ou si le corps sort de 100 à 150 mots (compte fait par le code), la brève est **régénérée une seule fois** avec la liste des erreurs, puis le statut est affiché tel quel. Pas de boucle.
+Les nombres sont comparés par valeur : `7,3 Md€` = `7 300 M€` = `7,3 milliards d'euros`. « T3 » ou « 3ème » ne comptent pas comme le nombre 3.
 
-**Limites connues** : unpdf aplatit les tableaux, si bien que des cellules voisines peuvent fusionner en un seul nombre. Cela donne des faux négatifs (« à confirmer »), jamais un faux « vérifié ». Le format anglo-saxon `1,234.5` est mal lu. Un nombre sans unité correspond à n'importe quelle échelle ; c'est nécessaire pour les tableaux, et le contrôle de la citation compense en partie.
+Si un chiffre est introuvable ou si la brève sort de 100 à 150 mots, **elle est régénérée une seule fois**, avec les erreurs. La raison de la relance est affichée.
 
-**Résultat** sur les 5 brèves générées : 40 chiffres, tous vérifiés. La brève STMicro n'en contient aucun (seulement des nominations) : elle est affichée « à confirmer », car une brève sans chiffre ne prouve rien.
+**Résultat** : 40 chiffres sur 40 vérifiés.
 
-## Prompts clés
+---
 
-Tous les prompts sont en français et imposent de ne travailler que sur le texte fourni entre balises `<document>`.
+## 3. L'IA et le bilan
 
-**1. Grille de sélection** (Haiku, `effort: "low"`) :
+### Trois prompts clés
+
+<details>
+<summary><b>1. Grille de sélection</b> (Haiku, effort bas)</summary>
 
 ```
 Tu analyses une publication réglementée déposée auprès de l'AMF.
@@ -119,8 +133,10 @@ Remplis la grille UNIQUEMENT à partir du texte fourni entre les balises <docume
 
 Si une information est absente du texte, réponds false ou "aucune". Ne devine jamais.
 ```
+</details>
 
-**2. Brève** (Haiku, `effort: "medium"`) :
+<details>
+<summary><b>2. Brève</b> (Haiku, effort moyen)</summary>
 
 ```
 Tu es journaliste financier. Tu rédiges une brève à partir d'une publication réglementée déposée auprès de l'AMF.
@@ -129,41 +145,52 @@ Utilise UNIQUEMENT le texte fourni entre les balises <document>.
 - titre : informatif et factuel, sans superlatif.
 - corps : entre 100 et 150 mots, en français, au présent, sans formule promotionnelle.
 - faits_cles : 3 à 5 faits courts.
-- chiffres : CHAQUE chiffre cité dans le corps, avec sa valeur telle qu'écrite dans le document (ex. "7,3"), son unité (ex. "Md€", "M€", "%") et citation_exacte : la phrase du document qui contient ce chiffre, recopiée mot pour mot.
+- chiffres : CHAQUE chiffre cité dans le corps (montants, pourcentages, quantités ; jamais les dates), avec sa valeur telle qu'écrite dans le document (ex. "7,3"), son unité (ex. "Md€", "M€", "%") et citation_exacte : la phrase du document qui contient ce chiffre, recopiée mot pour mot.
 
 Règles strictes :
 - n'utilise aucun chiffre absent du document ;
 - ne calcule rien : ni variation, ni conversion, ni arrondi, ni total ;
 - n'ajoute aucune information extérieure au document ;
+- ignore la présentation générique de la société (section « À propos », « About », effectifs, nombre de clients) : n'en tire ni fait ni chiffre ;
 - ne reformule jamais une citation_exacte.
 ```
+</details>
 
-**3. Relance** (une seule fois, avec la brève précédente et la liste des problèmes détectés par le code) :
+<details>
+<summary><b>3. Relance</b> (une seule fois)</summary>
 
 ```
 Le contrôle automatique a détecté des problèmes dans ta brève précédente.
 Réécris la brève complète en corrigeant ces problèmes, avec les mêmes règles.
 ```
+</details>
 
-Ce qui a changé en route : la spécification prévoyait le tool use forcé et une température basse, mais les deux renvoient une erreur 400 sur les modèles 5.5. J'ai donc utilisé les structured outputs, avec un effort bas et des champs fermés pour la stabilité. Le prompt de la brève exclut aussi les dates : le vérificateur lisait « 1er janvier 2027 » comme le nombre 1.
+**Ce qui a changé en route :**
+- Le tool use forcé et la température renvoient une erreur sur les modèles 5.5 : j'ai utilisé les structured outputs.
+- Les dates sont exclues des chiffres.
+- La section « À propos » est ignorée : les chiffres de STMicro en venaient.
 
-### Une erreur de l'IA détectée
+### Erreurs de l'IA détectées
 
-_À compléter._
+**Des chiffres vrais mais hors sujet (STMicroelectronics).** Pour une annonce de nominations, Haiku a cité « 49 000 collaborateurs » et « 200 000 clients ». Les deux chiffres sont bien dans le PDF, donc la vérification les a passés au vert. Mais ils viennent du paragraphe « À propos », pas de l'annonce.
+C'est la limite de notre contrôle : il prouve qu'un chiffre est dans le document, pas qu'il est pertinent. Correction : une règle dans le prompt pour ignorer la présentation de la société. La brève régénérée ne parle plus que des nominations.
 
-## Améliorations et suite
+**Une date prise pour un chiffre.** Haiku a listé « 1er janvier 2027 » parmi les chiffres d'une brève, et le vérificateur lisait le nombre 1. Correction : le prompt exclut les dates, et le code les ignore.
 
-Ce que je ferais avec plus de temps, dans l'ordre :
+### Ce que je ferais avec plus de temps
 
-- **Sélection** : départager les ex aequo sur l'événement plutôt que sur la taille de la société (passer plus de candidates à la grille, ce qui coûte peu), pour ne plus rater une petite valeur comme AgroGeneration. Ajuster ensuite le critère avec les données d'audience.
-- **Doublons bilingues** : regrouper par ISIN, sous-type et fenêtre de temps, et garder la version anglaise quand elle est seule.
-- **Brèves** : un chapô et un titre plus éditorial, à la manière de Clardot ; conserver le motif des relances pour les analyser.
-- **Extraction** : lire les tableaux comme des tableaux, pour éviter les nombres fusionnés.
-- **Architecture cible** : une queue BullMQ avec un worker sur Railway, une reprise sur échec et un budget de tokens, au lieu d'un appel HTTP par brève.
-- **Qualité des brèves** : des personas LLM qui notent chaque brève (analyste M&A, directeur financier, journaliste).
-- **Personnalisation** : un suivi de lecture côté front (Intersection Observer, temps de lecture) pour construire un profil d'intérêts, puis un clustering des lecteurs et du filtrage collaboratif.
-- **Coût** : de petits modèles spécialisés pour la sélection.
+**Avec un jour de plus**
+- Départager les ex aequo sur l'événement plutôt que sur la taille de la société.
+- Ajouter un chapô et un titre plus éditorial, comme Clardot.
+- Lire les tableaux des PDF comme des tableaux.
+- Garder la version anglaise quand elle est la seule.
 
-## Temps passé
+**Architecture cible**
+- Une queue BullMQ avec un worker sur Railway, une reprise sur échec et un budget de tokens.
+- Des personas LLM qui notent les brèves : analyste M&A, directeur financier, journaliste.
+- Un suivi de lecture (temps de lecture, Intersection Observer), puis un clustering des lecteurs et du filtrage collaboratif.
+- Un critère de sélection ajusté avec les données d'audience, et de petits modèles spécialisés pour réduire le coût.
 
-_À compléter._
+### Temps passé
+
+Environ 3 h 30.
