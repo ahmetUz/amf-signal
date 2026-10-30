@@ -1,6 +1,6 @@
 import { runSelection } from "@/lib/selection/select";
 
-export const maxDuration = 60;
+export const maxDuration = 300; // 10 documents analysés un par un par Haiku
 
 export async function POST() {
   try {

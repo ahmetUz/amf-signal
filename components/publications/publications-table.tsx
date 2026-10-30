@@ -6,6 +6,38 @@ import type { PublicationRow } from "@/lib/publications/queries";
 import { subtypeLabel } from "@/lib/publications/labels";
 import { formatDateTime } from "@/lib/format";
 
+function Reasons({ reasons }: { reasons: string[] | null }) {
+  if (!reasons) return null;
+  return (
+    <ul className="mt-1 text-xs text-muted-foreground">
+      {reasons.map((r) => <li key={r}>{r}</li>)}
+    </ul>
+  );
+}
+
+// Score final (grille Haiku + code) s'il existe, sinon score par règles. Les raisons sont toujours affichées.
+function ScoreCell({ row }: { row: PublicationRow }) {
+  if (row.finalScore !== null) {
+    return (
+      <div>
+        <div className="flex items-center gap-2">
+          <span className="font-semibold tabular-nums">{row.finalScore}</span>
+          {row.selected && <Badge>Sélectionnée</Badge>}
+        </div>
+        <Reasons reasons={row.finalReasons} />
+        <div className="mt-1 text-xs text-muted-foreground/70">Règles : {row.score}</div>
+      </div>
+    );
+  }
+  if (row.score === null) return <span className="text-muted-foreground">—</span>;
+  return (
+    <div>
+      <span className="font-semibold tabular-nums">{row.score}</span>
+      <Reasons reasons={row.finalReasons ?? row.scoreReasons} />
+    </div>
+  );
+}
+
 export function PublicationsTable({ rows }: { rows: PublicationRow[] }) {
   if (rows.length === 0) {
     return <p className="py-12 text-center text-sm text-muted-foreground">Aucune publication pour ces filtres.</p>;
@@ -38,18 +70,7 @@ export function PublicationsTable({ rows }: { rows: PublicationRow[] }) {
               </a>
             </TableCell>
             <TableCell className="whitespace-normal">
-              {row.score === null ? (
-                <span className="text-muted-foreground">—</span>
-              ) : (
-                <div>
-                  <span className="font-semibold tabular-nums">{row.score}</span>
-                  {row.scoreReasons && (
-                    <ul className="mt-1 text-xs text-muted-foreground">
-                      {row.scoreReasons.map((r) => <li key={r}>{r}</li>)}
-                    </ul>
-                  )}
-                </div>
-              )}
+              <ScoreCell row={row} />
             </TableCell>
           </TableRow>
         ))}

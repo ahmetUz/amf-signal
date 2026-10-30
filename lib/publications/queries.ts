@@ -29,11 +29,13 @@ export async function listPublications(filters: PublicationFilters) {
       documentUrl: publications.documentUrl,
       score: publications.score,
       scoreReasons: publications.scoreReasons,
+      finalScore: publications.finalScore,
+      finalReasons: publications.finalReasons,
       selected: publications.selected,
     })
     .from(publications)
     .where(whereClause(filters))
-    .orderBy(desc(publications.publishedAt))
+    .orderBy(desc(publications.selected), sql`${publications.finalScore} desc nulls last`, desc(publications.publishedAt))
     .limit(MAX_ROWS);
 }
 

@@ -16,6 +16,7 @@ export const publications = pgTable("publications", {
   scoreReasons: jsonb("score_reasons").$type<string[]>(),
   grid: jsonb("grid"), // grille factuelle remplie par Haiku (étape 3b), validée par Zod à la lecture
   finalScore: integer("final_score"), // calculé par le code à partir de la grille
+  finalReasons: jsonb("final_reasons").$type<string[]>(),
   selected: boolean("selected").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
