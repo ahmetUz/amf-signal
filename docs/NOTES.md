@@ -25,6 +25,9 @@
 - Upsert sur `uin` : une seconde collecte donne toujours 187 lignes. `score` et `selected` ne sont pas écrasés par une nouvelle collecte.
 - Sous-types : 110 publications sur 187 sont classées « Informations privilégiées », une catégorie fourre-tout qui couvre aussi bien un contrat qu'une acquisition ou un changement de dirigeant. Le sous-type ne suffit donc pas pour le score de sélection : il faut aussi analyser le titre.
 - Type contre sous-type : `type_d_information` n'a que 4 valeurs, trop larges pour être utiles. Le filtre et les badges utilisent donc `sous_type_d_information`.
+- Titres génériques : au moins 25 publications ont pour titre la simple répétition de leur catégorie, par exemple « Informations privilégiées / Autres communiqués » ou « Information financière trimestrielle / Information financière du troisième trimestre ». Le titre ne dit alors rien de l'événement : seul le document permet de juger.
+- Pièges de mots-clés : un titre comme « Acquisition ou cession des actions de l'émetteur / Transactions sur actions propres » contient le mot « acquisition », alors qu'il s'agit d'un rachat d'actions courant, pas d'une opération de M&A. À l'inverse, « Malteries Franco Belges : Résultats de l'exercice […] et mise à disposition du Rapport financier annuel » contient « mise à disposition », mot typique de la routine, mais il annonce de vrais résultats.
+- Émetteurs non cotés : des collectivités locales déposent aussi dans le flux (« Délibération BP 2026 », « Délibération Augmentation de plafond EMTN »), car elles émettent des obligations.
 
 ## Prompts
 
