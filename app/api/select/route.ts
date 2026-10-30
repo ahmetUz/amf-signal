@@ -1,8 +1,10 @@
+import { isAuthorized, unauthorized } from "@/lib/api/auth";
 import { runSelection } from "@/lib/selection/select";
 
 export const maxDuration = 300; // 10 documents analysés un par un par Haiku
 
-export async function POST() {
+export async function POST(request: Request) {
+  if (!isAuthorized(request)) return unauthorized();
   try {
     return Response.json(await runSelection());
   } catch (error) {
