@@ -60,6 +60,37 @@ Si une information est absente du texte, réponds false ou "aucune". Ne devine j
 
 Premier essai (30/10/2026, 10 candidates, 25 s) : les 10 citations ont été retrouvées mot pour mot. Vérification manuelle d'un cas douteux : TotalEnergies avait `impact_capital = true`, ce que confirme le document (augmentation de capital réservée aux salariés et rachat d'actions de 2,5 G$).
 
+### Brève (Haiku, `lib/briefs/write.ts`)
+
+Modèle `claude-haiku-5-5` (choisi plutôt que Sonnet : c'est un test technique, et la vérification par le code compense), `effort: "medium"`, structured output `briefOutputSchema`. Le lien vers la source est ajouté par le code.
+
+```
+Tu es journaliste financier. Tu rédiges une brève à partir d'une publication réglementée déposée auprès de l'AMF.
+Utilise UNIQUEMENT le texte fourni entre les balises <document>.
+
+- titre : informatif et factuel, sans superlatif.
+- corps : entre 100 et 150 mots, en français, au présent, sans formule promotionnelle.
+- faits_cles : 3 à 5 faits courts.
+- chiffres : CHAQUE chiffre cité dans le corps, avec sa valeur telle qu'écrite dans le document (ex. "7,3"), son unité (ex. "Md€", "M€", "%") et citation_exacte : la phrase du document qui contient ce chiffre, recopiée mot pour mot.
+
+Règles strictes :
+- n'utilise aucun chiffre absent du document ;
+- ne calcule rien : ni variation, ni conversion, ni arrondi, ni total ;
+- n'ajoute aucune information extérieure au document ;
+- ne reformule jamais une citation_exacte.
+```
+
+### Relance (une seule, `lib/briefs/generate.ts`)
+
+Déclenchée si un chiffre est `non_verifiable` ou si le corps sort de 100 à 150 mots (compte fait par le code). On renvoie la brève précédente et la liste des problèmes :
+
+```
+Le contrôle automatique a détecté des problèmes dans ta brève précédente.
+Réécris la brève complète en corrigeant ces problèmes, avec les mêmes règles.
+```
+
+Premier essai (30/10/2026, 5 brèves) : 4 sur 5 ont eu besoin d'une relance, et les 5 ont fini avec tous leurs chiffres `verifie` (46 chiffres). Le motif des premières tentatives n'a pas été conservé (voir les améliorations).
+
 ## Erreurs de l'IA
 
 ## Temps
