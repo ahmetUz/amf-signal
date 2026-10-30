@@ -57,3 +57,22 @@ describe("verifyFigure", () => {
     expect(verifyFigure(figure({ valeur: "environ sept" }), { source, body }).status).toBe("non_verifiable");
   });
 });
+
+describe("verifyFigure : une date n'est pas un chiffre vérifiable", () => {
+  // Cas réel (brève STMicroelectronics) : Haiku a rendu « 1er janvier 2027 » comme chiffre.
+  // Le code n'en lisait que « 1 », retrouvé partout : le contrôle passait sans rien prouver.
+  const stSource = "La nouvelle organisation entrera en vigueur le 1er janvier 2027, pour une mise en œuvre de";
+
+  it.each([
+    [{ valeur: "1er janvier 2027", unite: "date" }],
+    [{ valeur: "1er janvier 2027", unite: "" }],
+    [{ valeur: "mars 2027", unite: "date" }],
+  ])("%j est non vérifiable", (date) => {
+    const check = verifyFigure(
+      { ...date, citation_exacte: "La nouvelle organisation entrera en vigueur le 1er janvier 2027" },
+      { source: stSource, body: "La réorganisation entre en vigueur le 1er janvier 2027." },
+    );
+
+    expect(check.status).toBe("non_verifiable");
+  });
+});

@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { briefs, publications, type CheckedFigure } from "@/lib/db/schema";
 import { getDocument } from "@/lib/documents/store";
-import { verifyFigure } from "@/lib/verification/verify";
+import { isDate, verifyFigure } from "@/lib/verification/verify";
 import { countWords, overallStatus } from "./checks";
 import { BRIEF_MODEL, writeBrief, type BriefInput, type BriefOutput } from "./write";
 
@@ -18,7 +18,11 @@ function evaluate(brief: BriefOutput, source: string): Evaluation {
 
   const issues = figures
     .filter((f) => f.status === "non_verifiable")
-    .map((f) => `Le chiffre « ${f.valeur} ${f.unite} » est introuvable dans le document : retire-le ou remplace-le par un chiffre du document, avec sa citation exacte.`);
+    .map((f) =>
+      isDate(f)
+        ? `« ${f.valeur} » est une date, pas un chiffre : retire-la de la liste des chiffres (elle peut rester dans le corps).`
+        : `Le chiffre « ${f.valeur} ${f.unite} » est introuvable dans le document : retire-le ou remplace-le par un chiffre du document, avec sa citation exacte.`,
+    );
   if (wordCount < MIN_WORDS || wordCount > MAX_WORDS) {
     issues.push(`Le corps fait ${wordCount} mots ; il doit en faire entre ${MIN_WORDS} et ${MAX_WORDS}.`);
   }

@@ -13,6 +13,13 @@ export type FigureCheck = {
   figureInBody: boolean; // (c)
 };
 
+const MONTHS = /janvier|f[ée]vrier|mars|avril|mai|juin|juillet|ao[uû]t|septembre|octobre|novembre|d[ée]cembre/i;
+
+/** Une date (« 1er janvier 2027 », unité « date ») n'est pas un chiffre : on n'en lirait que « 1 ». */
+export function isDate({ valeur, unite }: Figure): boolean {
+  return /date/i.test(unite) || MONTHS.test(valeur);
+}
+
 /**
  * Les trois contrôles du CLAUDE.md pour un chiffre de brève :
  *   (a) la citation existe mot pour mot dans le document (après normalisation des espaces) ;
@@ -23,7 +30,7 @@ export type FigureCheck = {
  */
 export function verifyFigure(figure: BriefFigure, { source, body }: { source: string; body: string }): FigureCheck {
   const parsed = parseFigure(figure);
-  if (!parsed) {
+  if (!parsed || isDate(figure)) {
     return { status: "non_verifiable", citationInSource: false, figureInCitation: false, figureInBody: false };
   }
 
