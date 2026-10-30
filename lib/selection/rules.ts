@@ -58,8 +58,7 @@ const LEVELS: Level[] = [
     keywords: [
       "droits de vote",
       "actions propres",
-      "mise à disposition",
-      "rapport financier",
+      "mise à disposition", // la mise à disposition d'un rapport, pas le rapport lui-même (cas Sapmer)
       "contrat de liquidité",
       "honoraires",
     ],

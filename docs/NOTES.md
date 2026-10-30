@@ -91,6 +91,15 @@ Réécris la brève complète en corrigeant ces problèmes, avec les mêmes règ
 
 Premier essai (30/10/2026, 5 brèves) : 4 sur 5 ont eu besoin d'une relance, et les 5 ont fini avec tous leurs chiffres `verifie` (46 chiffres). Le motif des premières tentatives n'a pas été conservé (voir les améliorations).
 
+## Comparaison avec Clarsource et Clardot (30/10/2026)
+
+- **Clarsource** (le fil) ne rédige pas de brève pour une publication AMF. Il reprend le titre officiel, ajoute une étiquette de catégorie (« Résultats & Vie financière », « Nominations », « Fusions & Acquisitions »), le type et le sous-type AMF, puis renvoie vers le PDF.
+- **Clardot** (le journal) rédige les articles. Leur corps est réservé aux abonnés, on ne peut donc comparer que le titre et le chapô. Leurs titres utilisent un verbe éditorial et le chiffre-clé en toutes lettres (« Sapmer accuse une perte nette de 13,1 millions d'euros au semestre »). Le chapô donne l'angle (« …malgré…, mais… »), suivi d'une section « À retenir ». Nos brèves sont plus neutres et n'ont pas de chapô, mais leurs chiffres sont contrôlés et le statut de chaque chiffre est affiché.
+- **Ce que notre sélection a raté.** Clardot a consacré un article à 2 publications que nous n'avons pas retenues :
+  - **Sapmer** (« Sapmer-Rapport financier semestriel 2026 ») : notre règle classait « rapport financier » en routine. **Corrigé** : seule la « mise à disposition » d'un rapport est de la routine (test TDD sur le titre réel). Le score passe de 0 à 1 (« à vérifier dans le document »).
+  - **AgroGeneration** (« Résultats semestriels 2026… ») : score de 3, mais hors du top 10, car les ex aequo sont départagés par le CAC 40. **Biais assumé, non corrigé** : le départage favorise les grandes sociétés, alors que Clardot couvre aussi les petites valeurs quand le fait est marquant.
+- Pistes d'amélioration : départager les ex aequo sur l'événement (une grille Haiku sur plus de candidates, ce qui est peu coûteux) plutôt que sur la taille ; ajouter un champ `chapo` et un style de titre éditorial dans le prompt de la brève.
+
 ## Erreurs de l'IA
 
 ## Temps

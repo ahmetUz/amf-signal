@@ -87,13 +87,25 @@ describe("scoreByRules : pièges observés dans le flux", () => {
     expect(result.score).toBe(1);
   });
 
-  it("un rapport financier semestriel seul est de la routine", () => {
+  // Corrigé après comparaison avec Clardot : un article y annonçait « Sapmer accuse une perte nette de
+  // 13,1 millions d'euros », tiré d'une publication que nos règles classaient en routine. Un rapport
+  // financier contient des résultats : seule sa « mise à disposition » est de la routine.
+  it.each([
+    ["Sapmer-Rapport financier semestriel 2026"],
+    ["Rapport Financier semestriel 2026"],
+  ])("« %s » n'est pas de la routine : le document contient des résultats", (title) => {
+    const result = scoreByRules({ title, subtype: "Rapports financiers et d'audit semestriels/examens réduits" });
+
+    expect(result.score).toBeGreaterThan(0);
+  });
+
+  it("la mise à disposition d'un rapport financier reste de la routine", () => {
     const result = scoreByRules({
-      title: "Rapport Financier semestriel 2026",
+      title: "ECOSLOPS : MISE A DISPOSITION DU RAPPORT FINANCIER SEMESTRIEL 2026",
       subtype: "Rapports financiers et d'audit semestriels/examens réduits",
     });
 
-    expect(result).toEqual({ score: 0, reasons: ["Routine : « rapport financier »"] });
+    expect(result).toEqual({ score: 0, reasons: ["Routine : « mise à disposition »"] });
   });
 
   it("un titre générique n'est pas écarté : le document devra être lu", () => {
